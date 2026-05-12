@@ -1,0 +1,25 @@
+# Node
+node_modules/
+.expo/
+dist/
+*.tgz
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# Expo
+.expo-shared/
+web-build/
