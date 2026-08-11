@@ -74,13 +74,19 @@ npx expo start
 | **Android emulator** | Press `a` in the Expo terminal |
 | **iOS simulator** | Press `i` in the Expo terminal |
 
-> **Important — change `brokerUrl` in `app/src/config.ts` to match your setup:**
+> **Important — set the broker address for your setup.** It is an environment variable, not a committed value, so we don't all fight over one line in `config.ts`:
 
-| Scenario | `brokerUrl` value |
-|----------|------------------|
-| Android emulator on the same machine | `ws://10.0.2.2:9001` *(default)* |
+```bash
+cp app/.env.example app/.env    # then edit it
+```
+
+| Scenario | `EXPO_PUBLIC_BROKER_URL` |
+|----------|--------------------------|
+| Android emulator on the same machine | `ws://10.0.2.2:9001` *(the default when unset)* |
 | iOS simulator on the same machine | `ws://localhost:9001` |
 | Physical phone on the same WiFi | `ws://<your-laptop-LAN-IP>:9001` |
+
+`app/.env` is gitignored. **Restart Metro after changing it** — Expo inlines the value at bundle time.
 
 To find your laptop's LAN IP on macOS: `ipconfig getifaddr en0`
 
