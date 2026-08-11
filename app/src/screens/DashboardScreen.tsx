@@ -9,7 +9,10 @@ import PitBanner from '../components/PitBanner';
 import StrategyPredictor from '../components/StrategyPredictor';
 import StatusTicker from '../components/StatusTicker';
 import InfoModal, { InfoContent } from '../components/InfoModal';
+import TrackMap from '../components/TrackMap';
 import { useTelemetry } from '../mqtt/useTelemetry';
+import { useCarPosition } from '../track/useCarPosition';
+import { TRACK_LENGTH_CM } from '../track/monza.generated';
 import { config } from '../config';
 import { pctHealth, HEALTH_COLOR, tireHealth } from '../types';
 
@@ -33,6 +36,8 @@ const STATUS_COLOR = {
 export default function DashboardScreen() {
   const { status, lastUpdateMs, state, battery, fuel, tires, strategy, recentEvents, imu } =
     useTelemetry();
+
+  const car = useCarPosition(state, recentEvents);
 
   const staleState   = isStale(lastUpdateMs, 'state');
   const staleBattery = isStale(lastUpdateMs, 'battery');
@@ -168,6 +173,34 @@ export default function DashboardScreen() {
     });
   }
 
+  function openTwin() {
+    setModal({
+      title: 'Digital Twin — Track Position',
+      value: car.pose.source === 'pose' ? 'Measured' : car.pose.source === 'progress' ? 'Estimated' : 'Unknown',
+      rows: [
+        { label: 'Position source', value: car.pose.source,
+          note: car.pose.source === 'progress' ? 'Derived from lap progress' : undefined },
+        { label: 'Lap progress',  value: car.progress !== null ? `${(car.progress * 100).toFixed(1)}%` : '—' },
+        { label: 'Field position', value: car.pose.source !== 'none'
+            ? `x ${car.pose.x.toFixed(0)} cm · y ${car.pose.y.toFixed(0)} cm` : '—' },
+        { label: 'Expected lap',  value: `${car.expectedLapTimeS.toFixed(1)}s`,
+          note: car.lapTimeMeasured ? 'Median of last 3 laps' : 'Seed value — no lap completed yet' },
+        { label: 'Track length',  value: `${(TRACK_LENGTH_CM / 100).toFixed(2)} m`,
+          note: 'Measured from the foam blueprint' },
+        { label: 'In pit',        value: car.inPit ? 'Yes' : 'No',
+          note: car.pitAssumedComplete ? 'Last visit ended by watchdog' : undefined },
+      ],
+      description:
+        'The car marker is placed by projecting lap progress onto the racing line extracted ' +
+        'from the physical Monza foam blueprint (22.01 m centreline, 72 cm lane). ' +
+        'Position is therefore an ESTIMATE, not a measurement: it assumes constant speed around ' +
+        'the lap, so the marker runs slightly ahead in slow corners and behind on the straight. ' +
+        'If the perception pipeline ever publishes a pose topic, it takes priority automatically ' +
+        'and this readout switches to "measured".',
+      source: 'Lap progress × extracted track geometry',
+    });
+  }
+
   function openConnection() {
     setModal({
       title: 'MQTT Connection',
@@ -214,6 +247,57 @@ export default function DashboardScreen() {
       </Pressable>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+        {/* ── DIGITAL TWIN ── */}
+        <View style={styles.mapRow}>
+          <TrackMap
+            pose={car.pose}
+            inPit={car.inPit}
+            stale={staleState}
+            height={300}
+            onPress={openTwin}
+          />
+          <View style={styles.mapSide}>
+            <Pressable style={styles.miniTile} onPress={openSpeed}>
+              <Text style={styles.miniLabel}>SPEED</Text>
+              <Text style={styles.miniValue}>
+                {speedKmh.toFixed(0)}<Text style={styles.miniUnit}> km/h</Text>
+              </Text>
+            </Pressable>
+
+            <Pressable style={styles.miniTile} onPress={openBattery}>
+              <Text style={styles.miniLabel}>BATTERY</Text>
+              <Text style={[styles.miniValue, { color: batColor }]}>
+                {battery ? `${batPct.toFixed(0)}%` : '—'}
+              </Text>
+            </Pressable>
+
+            <Pressable style={styles.miniTile} onPress={openFuel}>
+              <Text style={styles.miniLabel}>FUEL</Text>
+              <Text style={[styles.miniValue, { color: HEALTH_COLOR[pctHealth(fuel?.percent ?? 0)] }]}>
+                {fuel ? `${fuel.percent.toFixed(0)}%` : '—'}
+              </Text>
+            </Pressable>
+
+            <View style={styles.chipGrid}>
+              {(['fl', 'fr', 'rl', 'rr'] as const).map(pos => {
+                const v = tires?.[pos];
+                const c = v !== undefined ? HEALTH_COLOR[tireHealth(v)] : '#4b5563';
+                return (
+                  <Pressable
+                    key={pos}
+                    style={[styles.chip, { borderColor: c }]}
+                    onPress={() => v !== undefined && openTire(pos.toUpperCase(), v)}
+                  >
+                    <Text style={[styles.chipText, { color: c }]}>
+                      {pos.toUpperCase()} {v !== undefined ? `${Math.round(v * 100)}%` : '—'}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </View>
 
         {/* Lap history */}
         <View style={styles.lapHistoryRow}>
@@ -320,6 +404,18 @@ const styles = StyleSheet.create({
   settingsIcon: { fontSize: 13, color: '#4b5563', marginLeft: 4 },
   scroll: { flex: 1 },
   content: { paddingTop: 8 },
+  mapRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 12, paddingBottom: 10,
+  },
+  mapSide: { flex: 1, gap: 6 },
+  miniTile: { backgroundColor: '#161b22', borderRadius: 6, paddingVertical: 6, paddingHorizontal: 9 },
+  miniLabel: { fontSize: 8, color: '#6b7280', letterSpacing: 1.2 },
+  miniValue: { fontSize: 18, fontWeight: '700', color: '#f9fafb' },
+  miniUnit: { fontSize: 9, color: '#6b7280', fontWeight: '400' },
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 2 },
+  chip: { borderWidth: 1, borderRadius: 4, paddingVertical: 4, width: '47%', alignItems: 'center' },
+  chipText: { fontSize: 9, fontWeight: '700' },
   lapHistoryRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 16, marginBottom: 4,
