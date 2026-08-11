@@ -23,3 +23,7 @@ Thumbs.db
 # Expo
 .expo-shared/
 web-build/
+.run/
+
+# Recorded telemetry sessions
+sessions/

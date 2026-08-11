@@ -155,3 +155,53 @@ The app uses WebSocket (port 9001) because MQTT.js in React Native needs WS tran
 ## Data contract
 
 All topics are under `race/car1/`. See `app/src/types.ts` for TypeScript types and `mock-publisher/publisher.py` for Python dataclasses. Field names and units must stay in sync between the two.
+
+The contract is also machine-checkable in `tools/packet_schema.py` — required fields, types and ranges per topic. That is what `recorder.py` validates against.
+
+---
+
+## Track geometry
+
+The dashboard's digital twin is drawn from the real foam layout, not a hand-made map. `docs/track/monza_foam_grid_simple_rolls.pdf` is a vector blueprint at 1:1 scale; the extractor picks paths out of it by stroke signature.
+
+```bash
+python3 tools/extract_track.py            # regenerate app/src/track/monza.generated.ts
+python3 tools/extract_track.py --verify   # check a revised blueprint, write nothing
+```
+
+Current layout: **22.01 m** closed centreline, 72 cm lane, pit lane branching at 74.2% and rejoining at 86.3% of the lap.
+
+Run `--verify` whenever the team redraws the track. If it fails, the app's distance-based logic needs revisiting rather than silently regenerating.
+
+---
+
+## Session record & replay
+
+Replay goes through the broker, so the app cannot tell it from live data and needs no special mode.
+
+```bash
+# Capture a session, and check every payload against the packet spec
+python3 tools/recorder.py -o sessions/race1.ndjson --duration 60
+
+# Replay it — a rehearsed demo with no car required
+python3 tools/player.py sessions/race1.ndjson
+python3 tools/player.py sessions/race1.ndjson --speed 5 --loop
+```
+
+`recorder.py` prints a per-topic report on exit: message counts, observed rate against expected, and any contract violations grouped by kind. **When you first publish from real hardware, record 30 seconds and read that report** — it will tell you exactly which fields are missing, mistyped or out of range.
+
+`--rewrite-prefix race/test` republishes under a different prefix so a replay can run alongside a live publisher without colliding.
+
+Recorded sessions are gitignored.
+
+---
+
+## Tests
+
+```bash
+cd app && npm test                          # geometry + position maths (32 tests)
+python3 tools/test_roundtrip.py             # schema + record/replay round trip
+python3 tools/extract_track.py --verify     # blueprint still parses as expected
+```
+
+The round-trip test needs a broker on `localhost:1883` and skips itself without one.
