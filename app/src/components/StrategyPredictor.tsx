@@ -59,17 +59,19 @@ export default function StrategyPredictor({ strategy, tires, fuel, currentLap, t
         <View style={[styles.marker, styles.markerNow, {
           left: `${((currentLap - 1) / (totalLaps - 1)) * 100}%` as `${number}%`,
         }]} />
-        {/* pit marker */}
-        {pitLap && (
+        {/* pit marker. Ternary, not &&: target_lap is 0 when no pit is
+            scheduled, and {0 && ...} renders a bare 0 that React Native
+            rejects with "Text strings must be rendered within a <Text>". */}
+        {pitLap ? (
           <View style={[styles.marker, styles.markerPit, {
             left: `${((pitLap - 1) / (totalLaps - 1)) * 100}%` as `${number}%`,
           }]} />
-        )}
+        ) : null}
       </View>
       <View style={styles.timelineLaps}>
         <Text style={styles.lapMark}>L1</Text>
         <Text style={styles.lapMark}>L{Math.floor(totalLaps / 2)} ~now</Text>
-        {pitLap && <Text style={[styles.lapMark, { color: urgentColor }]}>L{pitLap} ⚑pit</Text>}
+        {pitLap ? <Text style={[styles.lapMark, { color: urgentColor }]}>L{pitLap} ⚑pit</Text> : null}
         <Text style={styles.lapMark}>L{totalLaps}</Text>
       </View>
     </View>
