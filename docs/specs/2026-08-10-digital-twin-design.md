@@ -141,6 +141,40 @@ Beyond the arithmetic, 3.8 m/s (13.7 km/h) is not plausible for a JetRacer on a 
 
 This matters beyond the UI: it affects Soyeong's wear-per-distance model and Kangyun's planner horizon. **Action:** raise with Modeling and agree a single set of numbers, then fix the mock in one commit.
 
+### Resolved — 2026-08-26
+
+The three numbers did not all need to change. Working back from the measured
+track: 22.01 m at a plausible JetRacer pace of ~1.22 m/s is a **17.6 s** lap,
+against the mock's `BASE_LAP_TIME` of 18.0 s. The lap *time* was already right.
+Only the published speed was wrong — a literal `3.8` m/s, which over an 18 s lap
+implies the 68 m circuit noted above.
+
+`mock-publisher/publisher.py` now derives it:
+
+```python
+TRACK_LENGTH_M   = 22.01                        # from extract_track.py
+BASE_LAP_TIME    = 18.0
+NOMINAL_SPEED_MS = TRACK_LENGTH_M / BASE_LAP_TIME   # 1.223 m/s = 4.4 km/h
+```
+
+Consequences:
+
+- **Demo pacing is unchanged.** Lap times, wear, fuel burn and the pit lap are
+  all keyed to `BASE_LAP_TIME`, which did not move. A race still pits at lap 6
+  and runs ten laps.
+- **The speed readout changes**, 13.7 km/h → 4.4 km/h. The dashboard's speed
+  gauge was scaled to 20 km/h for the old figure and has been rescaled to 8, or
+  the needle would sit in the first quarter of the dial all race.
+- `SEED_LAP_TIME_S` in the app needs no change; it was already 18.
+- `tools/test_roundtrip.py` now asserts publisher length == `monza.generated.ts`,
+  that speed x lap time covers the track exactly once, that the speed is
+  physically plausible, and that the app's seed matches the publisher — so these
+  cannot drift apart again.
+
+Still open for Modeling: the **wear and consumption** rates (tire 0.12/lap on
+the worst corner, fuel 10%/lap, the 3S LiPo discharge curve). Those describe the
+simulator, not a characterised vehicle.
+
 ---
 
 ## 8. Dependencies and open questions

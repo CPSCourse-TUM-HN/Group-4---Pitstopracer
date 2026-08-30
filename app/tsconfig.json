@@ -5,7 +5,11 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   }
 }

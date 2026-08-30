@@ -1,5 +1,6 @@
 # Node
 node_modules/
+coverage/
 .expo/
 dist/
 *.tgz
@@ -27,3 +28,7 @@ web-build/
 
 # Recorded telemetry sessions
 sessions/
+
+# Expo native prebuild output (regenerate with: npx expo prebuild)
+app/ios/
+app/android/

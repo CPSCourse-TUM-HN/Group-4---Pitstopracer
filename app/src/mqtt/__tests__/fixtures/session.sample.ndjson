@@ -1,0 +1,143 @@
+{"t_offset_ms": 0, "topic": "race/car1/state", "payload": {"ts": 1787690062242, "speed": 1.25, "steering": 0.166, "throttle": 0.88, "lap": 1, "lap_time_s": 0.0}}
+{"t_offset_ms": 0, "topic": "race/car1/imu", "payload": {"ts": 1787690062243, "ax": 0.0519, "ay": 0.2882, "az": 0.9793, "gx": 0.61, "gy": 2.46, "gz": 6.62}}
+{"t_offset_ms": 0, "topic": "race/car1/battery", "payload": {"ts": 1787690062243, "voltage": 12.6, "percent": 100.0, "current_ma": 2918.0, "eta_s": 200.0}}
+{"t_offset_ms": 0, "topic": "race/car1/fuel", "payload": {"ts": 1787690062243, "percent": 100.0, "eta_s": 180.0}}
+{"t_offset_ms": 0, "topic": "race/car1/tires", "payload": {"ts": 1787690062243, "fl": 1.0, "fr": 1.0, "rl": 1.0, "rr": 1.0, "eta_s": 150.0}}
+{"t_offset_ms": 1848, "topic": "race/car1/state", "payload": {"ts": 1787690064099, "speed": 1.21, "steering": -0.101, "throttle": 0.83, "lap": 1, "lap_time_s": 7.43}}
+{"t_offset_ms": 1848, "topic": "race/car1/imu", "payload": {"ts": 1787690064099, "ax": -0.0461, "ay": 0.2692, "az": 0.9774, "gx": -0.67, "gy": 2.48, "gz": -2.01}}
+{"t_offset_ms": 1865, "topic": "race/car1/battery", "payload": {"ts": 1787690064113, "voltage": 12.513, "percent": 96.3, "current_ma": 2872.0, "eta_s": 192.5}}
+{"t_offset_ms": 1865, "topic": "race/car1/fuel", "payload": {"ts": 1787690064113, "percent": 95.8, "eta_s": 172.5}}
+{"t_offset_ms": 1865, "topic": "race/car1/tires", "payload": {"ts": 1787690064113, "fl": 0.95, "fr": 0.963, "rl": 0.958, "rr": 0.967, "eta_s": 142.5}}
+{"t_offset_ms": 3716, "topic": "race/car1/state", "payload": {"ts": 1787690065961, "speed": 1.17, "steering": -0.332, "throttle": 0.79, "lap": 1, "lap_time_s": 14.88}}
+{"t_offset_ms": 3717, "topic": "race/car1/imu", "payload": {"ts": 1787690065961, "ax": -0.087, "ay": 0.177, "az": 0.9819, "gx": -1.16, "gy": 2.65, "gz": -13.14}}
+{"t_offset_ms": 3717, "topic": "race/car1/battery", "payload": {"ts": 1787690065961, "voltage": 12.426, "percent": 92.6, "current_ma": 2687.0, "eta_s": 185.1}}
+{"t_offset_ms": 3717, "topic": "race/car1/fuel", "payload": {"ts": 1787690065961, "percent": 91.7, "eta_s": 165.1}}
+{"t_offset_ms": 3717, "topic": "race/car1/tires", "payload": {"ts": 1787690065961, "fl": 0.901, "fr": 0.926, "rl": 0.917, "rr": 0.934, "eta_s": 135.1}}
+{"t_offset_ms": 4500, "topic": "race/car1/event", "payload": {"ts": 1787690066746, "type": "lap"}}
+{"t_offset_ms": 5560, "topic": "race/car1/state", "payload": {"ts": 1787690067809, "speed": 1.14, "steering": -0.446, "throttle": 0.77, "lap": 2, "lap_time_s": 4.25}}
+{"t_offset_ms": 5560, "topic": "race/car1/imu", "payload": {"ts": 1787690067809, "ax": -0.1174, "ay": 0.1468, "az": 0.9899, "gx": -1.85, "gy": 1.82, "gz": -16.13}}
+{"t_offset_ms": 5620, "topic": "race/car1/battery", "payload": {"ts": 1787690067859, "voltage": 12.338, "percent": 88.8, "current_ma": 2856.0, "eta_s": 177.5}}
+{"t_offset_ms": 5620, "topic": "race/car1/fuel", "payload": {"ts": 1787690067859, "percent": 87.5, "eta_s": 157.5}}
+{"t_offset_ms": 5620, "topic": "race/car1/tires", "payload": {"ts": 1787690067859, "fl": 0.85, "fr": 0.888, "rl": 0.875, "rr": 0.9, "eta_s": 127.5}}
+{"t_offset_ms": 7409, "topic": "race/car1/state", "payload": {"ts": 1787690069659, "speed": 1.11, "steering": -0.401, "throttle": 0.79, "lap": 2, "lap_time_s": 11.65}}
+{"t_offset_ms": 7409, "topic": "race/car1/imu", "payload": {"ts": 1787690069659, "ax": -0.102, "ay": 0.2001, "az": 1.008, "gx": -1.19, "gy": 2.44, "gz": -13.34}}
+{"t_offset_ms": 7459, "topic": "race/car1/battery", "payload": {"ts": 1787690069710, "voltage": 12.251, "percent": 85.1, "current_ma": 2734.0, "eta_s": 170.1}}
+{"t_offset_ms": 7459, "topic": "race/car1/fuel", "payload": {"ts": 1787690069710, "percent": 83.4, "eta_s": 150.1}}
+{"t_offset_ms": 7459, "topic": "race/car1/tires", "payload": {"ts": 1787690069710, "fl": 0.801, "fr": 0.851, "rl": 0.834, "rr": 0.867, "eta_s": 120.1}}
+{"t_offset_ms": 8999, "topic": "race/car1/event", "payload": {"ts": 1787690071249, "type": "lap"}}
+{"t_offset_ms": 9263, "topic": "race/car1/state", "payload": {"ts": 1787690071511, "speed": 1.1, "steering": -0.214, "throttle": 0.83, "lap": 3, "lap_time_s": 1.05}}
+{"t_offset_ms": 9263, "topic": "race/car1/imu", "payload": {"ts": 1787690071514, "ax": -0.0557, "ay": 0.2722, "az": 1.005, "gx": -0.57, "gy": 3.09, "gz": -8.04}}
+{"t_offset_ms": 9334, "topic": "race/car1/battery", "payload": {"ts": 1787690071585, "voltage": 12.164, "percent": 81.3, "current_ma": 2762.0, "eta_s": 162.6}}
+{"t_offset_ms": 9334, "topic": "race/car1/fuel", "payload": {"ts": 1787690071585, "percent": 79.2, "eta_s": 142.6}}
+{"t_offset_ms": 9334, "topic": "race/car1/tires", "payload": {"ts": 1787690071585, "fl": 0.751, "fr": 0.813, "rl": 0.792, "rr": 0.834, "eta_s": 112.6}}
+{"t_offset_ms": 11111, "topic": "race/car1/state", "payload": {"ts": 1787690073359, "speed": 1.1, "steering": 0.049, "throttle": 0.89, "lap": 3, "lap_time_s": 8.44}}
+{"t_offset_ms": 11111, "topic": "race/car1/imu", "payload": {"ts": 1787690073359, "ax": 0.0318, "ay": 0.2831, "az": 1.01, "gx": -0.08, "gy": 2.94, "gz": 2.96}}
+{"t_offset_ms": 11199, "topic": "race/car1/battery", "payload": {"ts": 1787690073450, "voltage": 12.077, "percent": 77.6, "current_ma": 2721.0, "eta_s": 155.2}}
+{"t_offset_ms": 11199, "topic": "race/car1/fuel", "payload": {"ts": 1787690073450, "percent": 75.1, "eta_s": 135.2}}
+{"t_offset_ms": 11199, "topic": "race/car1/tires", "payload": {"ts": 1787690073450, "fl": 0.701, "fr": 0.776, "rl": 0.751, "rr": 0.801, "eta_s": 105.2}}
+{"t_offset_ms": 13000, "topic": "race/car1/state", "payload": {"ts": 1787690075249, "speed": 1.12, "steering": 0.294, "throttle": 0.92, "lap": 3, "lap_time_s": 16.0}}
+{"t_offset_ms": 13000, "topic": "race/car1/imu", "payload": {"ts": 1787690075249, "ax": 0.0997, "ay": 0.2647, "az": 1.0106, "gx": 1.28, "gy": 1.25, "gz": 11.36}}
+{"t_offset_ms": 13037, "topic": "race/car1/battery", "payload": {"ts": 1787690075288, "voltage": 11.991, "percent": 73.9, "current_ma": 2817.0, "eta_s": 147.8}}
+{"t_offset_ms": 13038, "topic": "race/car1/fuel", "payload": {"ts": 1787690075288, "percent": 71.0, "eta_s": 127.8}}
+{"t_offset_ms": 13038, "topic": "race/car1/tires", "payload": {"ts": 1787690075288, "fl": 0.652, "fr": 0.739, "rl": 0.71, "rr": 0.768, "eta_s": 97.8}}
+{"t_offset_ms": 13508, "topic": "race/car1/event", "payload": {"ts": 1787690075752, "type": "lap"}}
+{"t_offset_ms": 14854, "topic": "race/car1/state", "payload": {"ts": 1787690077104, "speed": 1.15, "steering": 0.436, "throttle": 0.93, "lap": 4, "lap_time_s": 5.41}}
+{"t_offset_ms": 14854, "topic": "race/car1/imu", "payload": {"ts": 1787690077104, "ax": 0.1204, "ay": 0.245, "az": 0.9778, "gx": 0.89, "gy": 2.61, "gz": 16.84}}
+{"t_offset_ms": 14880, "topic": "race/car1/battery", "payload": {"ts": 1787690077128, "voltage": 11.905, "percent": 70.2, "current_ma": 2999.0, "eta_s": 140.5}}
+{"t_offset_ms": 14880, "topic": "race/car1/fuel", "payload": {"ts": 1787690077128, "percent": 66.9, "eta_s": 120.5}}
+{"t_offset_ms": 14880, "topic": "race/car1/tires", "payload": {"ts": 1787690077128, "fl": 0.603, "fr": 0.702, "rl": 0.669, "rr": 0.735, "eta_s": 90.5}}
+{"t_offset_ms": 16701, "topic": "race/car1/battery", "payload": {"ts": 1787690078951, "voltage": 11.82, "percent": 66.6, "current_ma": 2885.0, "eta_s": 133.2}}
+{"t_offset_ms": 16701, "topic": "race/car1/fuel", "payload": {"ts": 1787690078951, "percent": 62.9, "eta_s": 113.2}}
+{"t_offset_ms": 16702, "topic": "race/car1/tires", "payload": {"ts": 1787690078952, "fl": 0.554, "fr": 0.666, "rl": 0.629, "rr": 0.703, "eta_s": 83.2}}
+{"t_offset_ms": 16711, "topic": "race/car1/state", "payload": {"ts": 1787690078962, "speed": 1.18, "steering": 0.422, "throttle": 0.9, "lap": 4, "lap_time_s": 12.84}}
+{"t_offset_ms": 16712, "topic": "race/car1/imu", "payload": {"ts": 1787690078962, "ax": 0.1155, "ay": 0.294, "az": 0.988, "gx": 1.25, "gy": 2.95, "gz": 15.56}}
+{"t_offset_ms": 18010, "topic": "race/car1/event", "payload": {"ts": 1787690080262, "type": "lap"}}
+{"t_offset_ms": 18552, "topic": "race/car1/battery", "payload": {"ts": 1787690080801, "voltage": 11.734, "percent": 62.9, "current_ma": 2759.0, "eta_s": 125.8}}
+{"t_offset_ms": 18552, "topic": "race/car1/fuel", "payload": {"ts": 1787690080801, "percent": 58.8, "eta_s": 105.8}}
+{"t_offset_ms": 18552, "topic": "race/car1/tires", "payload": {"ts": 1787690080802, "fl": 0.505, "fr": 0.629, "rl": 0.588, "rr": 0.67, "eta_s": 75.8}}
+{"t_offset_ms": 18565, "topic": "race/car1/state", "payload": {"ts": 1787690080811, "speed": 1.22, "steering": 0.259, "throttle": 0.85, "lap": 5, "lap_time_s": 2.2}}
+{"t_offset_ms": 18566, "topic": "race/car1/imu", "payload": {"ts": 1787690080812, "ax": 0.0577, "ay": 0.2892, "az": 0.9936, "gx": 1.08, "gy": 2.27, "gz": 8.7}}
+{"t_offset_ms": 20398, "topic": "race/car1/battery", "payload": {"ts": 1787690082648, "voltage": 11.648, "percent": 59.2, "current_ma": 2668.0, "eta_s": 118.4}}
+{"t_offset_ms": 20398, "topic": "race/car1/fuel", "payload": {"ts": 1787690082648, "percent": 54.7, "eta_s": 98.4}}
+{"t_offset_ms": 20398, "topic": "race/car1/tires", "payload": {"ts": 1787690082648, "fl": 0.456, "fr": 0.592, "rl": 0.547, "rr": 0.637, "eta_s": 68.4}}
+{"t_offset_ms": 20411, "topic": "race/car1/state", "payload": {"ts": 1787690082660, "speed": 1.26, "steering": 0.004, "throttle": 0.8, "lap": 5, "lap_time_s": 9.59}}
+{"t_offset_ms": 20411, "topic": "race/car1/imu", "payload": {"ts": 1787690082660, "ax": -0.0302, "ay": 0.2346, "az": 0.9988, "gx": -0.72, "gy": 2.25, "gz": -1.93}}
+{"t_offset_ms": 22264, "topic": "race/car1/battery", "payload": {"ts": 1787690084510, "voltage": 11.561, "percent": 55.5, "current_ma": 2562.0, "eta_s": 110.9}}
+{"t_offset_ms": 22264, "topic": "race/car1/fuel", "payload": {"ts": 1787690084510, "percent": 50.5, "eta_s": 90.9}}
+{"t_offset_ms": 22264, "topic": "race/car1/tires", "payload": {"ts": 1787690084510, "fl": 0.406, "fr": 0.555, "rl": 0.505, "rr": 0.604, "eta_s": 60.9}}
+{"t_offset_ms": 22274, "topic": "race/car1/state", "payload": {"ts": 1787690084523, "speed": 1.24, "steering": -0.252, "throttle": 0.73, "lap": 5, "lap_time_s": 17.05}}
+{"t_offset_ms": 22274, "topic": "race/car1/imu", "payload": {"ts": 1787690084524, "ax": -0.0804, "ay": 0.1384, "az": 1.0252, "gx": -1.25, "gy": 1.52, "gz": -11.6}}
+{"t_offset_ms": 22787, "topic": "race/car1/event", "payload": {"ts": 1787690085037, "type": "lap"}}
+{"t_offset_ms": 24142, "topic": "race/car1/state", "payload": {"ts": 1787690086392, "speed": 1.21, "steering": -0.419, "throttle": 0.7, "lap": 6, "lap_time_s": 5.42}}
+{"t_offset_ms": 24143, "topic": "race/car1/imu", "payload": {"ts": 1787690086392, "ax": -0.1073, "ay": 0.1306, "az": 1.024, "gx": -1.27, "gy": 1.22, "gz": -17.42}}
+{"t_offset_ms": 24143, "topic": "race/car1/battery", "payload": {"ts": 1787690086392, "voltage": 11.473, "percent": 51.7, "current_ma": 2484.0, "eta_s": 103.4}}
+{"t_offset_ms": 24143, "topic": "race/car1/fuel", "payload": {"ts": 1787690086392, "percent": 46.3, "eta_s": 83.4}}
+{"t_offset_ms": 24143, "topic": "race/car1/tires", "payload": {"ts": 1787690086393, "fl": 0.356, "fr": 0.517, "rl": 0.463, "rr": 0.571, "eta_s": 53.4}}
+{"t_offset_ms": 26000, "topic": "race/car1/state", "payload": {"ts": 1787690088247, "speed": 1.16, "steering": -0.438, "throttle": 0.7, "lap": 6, "lap_time_s": 12.84}}
+{"t_offset_ms": 26000, "topic": "race/car1/imu", "payload": {"ts": 1787690088247, "ax": -0.1038, "ay": 0.1818, "az": 0.9894, "gx": -1.09, "gy": 1.32, "gz": -15.6}}
+{"t_offset_ms": 26015, "topic": "race/car1/battery", "payload": {"ts": 1787690088263, "voltage": 11.386, "percent": 48.0, "current_ma": 2418.0, "eta_s": 95.9}}
+{"t_offset_ms": 26015, "topic": "race/car1/fuel", "payload": {"ts": 1787690088263, "percent": 42.2, "eta_s": 75.9}}
+{"t_offset_ms": 26015, "topic": "race/car1/tires", "payload": {"ts": 1787690088263, "fl": 0.306, "fr": 0.48, "rl": 0.422, "rr": 0.537, "eta_s": 45.9}}
+{"t_offset_ms": 27850, "topic": "race/car1/state", "payload": {"ts": 1787690090101, "speed": 1.1, "steering": -0.301, "throttle": 0.72, "lap": 6, "lap_time_s": 20.25}}
+{"t_offset_ms": 27850, "topic": "race/car1/imu", "payload": {"ts": 1787690090101, "ax": -0.0472, "ay": 0.1986, "az": 0.982, "gx": -0.53, "gy": 1.73, "gz": -6.35}}
+{"t_offset_ms": 27875, "topic": "race/car1/battery", "payload": {"ts": 1787690090124, "voltage": 11.299, "percent": 44.2, "current_ma": 2361.0, "eta_s": 88.5}}
+{"t_offset_ms": 27875, "topic": "race/car1/fuel", "payload": {"ts": 1787690090125, "percent": 38.0, "eta_s": 68.5}}
+{"t_offset_ms": 27875, "topic": "race/car1/tires", "payload": {"ts": 1787690090125, "fl": 0.256, "fr": 0.442, "rl": 0.38, "rr": 0.504, "eta_s": 38.5}}
+{"t_offset_ms": 28136, "topic": "race/car1/strategy", "payload": {"ts": 1787690090386, "pit_recommended": true, "reason": "tire_wear", "target_lap": 7}}
+{"t_offset_ms": 28372, "topic": "race/car1/event", "payload": {"ts": 1787690090623, "type": "lap"}}
+{"t_offset_ms": 28646, "topic": "race/car1/event", "payload": {"ts": 1787690090896, "type": "pit_start"}}
+{"t_offset_ms": 28646, "topic": "race/car1/strategy", "payload": {"ts": 1787690090896, "pit_recommended": false, "reason": "", "target_lap": 0}}
+{"t_offset_ms": 28646, "topic": "race/car1/event", "payload": {"ts": 1787690090896, "type": "pit_start"}}
+{"t_offset_ms": 31266, "topic": "race/car1/event", "payload": {"ts": 1787690093470, "type": "pit_end"}}
+{"t_offset_ms": 31266, "topic": "race/car1/event", "payload": {"ts": 1787690093470, "type": "pit_end"}}
+{"t_offset_ms": 32148, "topic": "race/car1/fuel", "payload": {"ts": 1787690094399, "percent": 97.9, "eta_s": 176.3}}
+{"t_offset_ms": 32148, "topic": "race/car1/tires", "payload": {"ts": 1787690094399, "fl": 0.975, "fr": 0.981, "rl": 0.979, "rr": 0.983, "eta_s": 146.3}}
+{"t_offset_ms": 32282, "topic": "race/car1/state", "payload": {"ts": 1787690094526, "speed": 1.33, "steering": -0.057, "throttle": 0.91, "lap": 7, "lap_time_s": 4.22}}
+{"t_offset_ms": 32282, "topic": "race/car1/imu", "payload": {"ts": 1787690094526, "ax": 0.0074, "ay": 0.2799, "az": 0.9878, "gx": 0.82, "gy": 3.05, "gz": -1.6}}
+{"t_offset_ms": 32283, "topic": "race/car1/battery", "payload": {"ts": 1787690094526, "voltage": 11.214, "percent": 40.6, "current_ma": 2991.0, "eta_s": 81.2}}
+{"t_offset_ms": 33996, "topic": "race/car1/fuel", "payload": {"ts": 1787690096240, "percent": 93.8, "eta_s": 168.9}}
+{"t_offset_ms": 33996, "topic": "race/car1/tires", "payload": {"ts": 1787690096240, "fl": 0.926, "fr": 0.945, "rl": 0.938, "rr": 0.951, "eta_s": 138.9}}
+{"t_offset_ms": 34131, "topic": "race/car1/state", "payload": {"ts": 1787690096376, "speed": 1.31, "steering": 0.206, "throttle": 0.93, "lap": 7, "lap_time_s": 11.62}}
+{"t_offset_ms": 34131, "topic": "race/car1/imu", "payload": {"ts": 1787690096376, "ax": 0.0831, "ay": 0.256, "az": 1.0125, "gx": 0.64, "gy": 2.28, "gz": 9.95}}
+{"t_offset_ms": 34131, "topic": "race/car1/battery", "payload": {"ts": 1787690096367, "voltage": 11.128, "percent": 36.9, "current_ma": 3015.0, "eta_s": 73.8}}
+{"t_offset_ms": 35721, "topic": "race/car1/event", "payload": {"ts": 1787690097971, "type": "lap"}}
+{"t_offset_ms": 35809, "topic": "race/car1/fuel", "payload": {"ts": 1787690098059, "percent": 89.8, "eta_s": 161.6}}
+{"t_offset_ms": 35809, "topic": "race/car1/tires", "payload": {"ts": 1787690098060, "fl": 0.878, "fr": 0.908, "rl": 0.898, "rr": 0.918, "eta_s": 131.6}}
+{"t_offset_ms": 35947, "topic": "race/car1/battery", "payload": {"ts": 1787690098189, "voltage": 11.043, "percent": 33.3, "current_ma": 2704.0, "eta_s": 66.5}}
+{"t_offset_ms": 35987, "topic": "race/car1/state", "payload": {"ts": 1787690098237, "speed": 1.28, "steering": 0.397, "throttle": 0.91, "lap": 8, "lap_time_s": 1.06}}
+{"t_offset_ms": 35987, "topic": "race/car1/imu", "payload": {"ts": 1787690098237, "ax": 0.1, "ay": 0.2672, "az": 1.0071, "gx": 1.11, "gy": 2.92, "gz": 15.28}}
+{"t_offset_ms": 37662, "topic": "race/car1/fuel", "payload": {"ts": 1787690099912, "percent": 85.7, "eta_s": 154.2}}
+{"t_offset_ms": 37662, "topic": "race/car1/tires", "payload": {"ts": 1787690099912, "fl": 0.828, "fr": 0.871, "rl": 0.857, "rr": 0.885, "eta_s": 124.2}}
+{"t_offset_ms": 37794, "topic": "race/car1/battery", "payload": {"ts": 1787690100039, "voltage": 10.956, "percent": 29.6, "current_ma": 2649.0, "eta_s": 59.1}}
+{"t_offset_ms": 37840, "topic": "race/car1/state", "payload": {"ts": 1787690100088, "speed": 1.24, "steering": 0.447, "throttle": 0.87, "lap": 8, "lap_time_s": 8.47}}
+{"t_offset_ms": 37840, "topic": "race/car1/imu", "payload": {"ts": 1787690100088, "ax": 0.109, "ay": 0.281, "az": 1.0142, "gx": 0.9, "gy": 3.24, "gz": 15.04}}
+{"t_offset_ms": 39516, "topic": "race/car1/fuel", "payload": {"ts": 1787690101764, "percent": 81.6, "eta_s": 146.8}}
+{"t_offset_ms": 39516, "topic": "race/car1/tires", "payload": {"ts": 1787690101764, "fl": 0.779, "fr": 0.834, "rl": 0.816, "rr": 0.853, "eta_s": 116.8}}
+{"t_offset_ms": 39658, "topic": "race/car1/battery", "payload": {"ts": 1787690101900, "voltage": 10.869, "percent": 25.8, "current_ma": 2650.0, "eta_s": 51.7}}
+{"t_offset_ms": 39688, "topic": "race/car1/state", "payload": {"ts": 1787690101936, "speed": 1.2, "steering": 0.338, "throttle": 0.82, "lap": 8, "lap_time_s": 15.86}}
+{"t_offset_ms": 39688, "topic": "race/car1/imu", "payload": {"ts": 1787690101936, "ax": 0.0584, "ay": 0.2549, "az": 1.019, "gx": 0.17, "gy": 2.37, "gz": 9.27}}
+{"t_offset_ms": 40232, "topic": "race/car1/event", "payload": {"ts": 1787690102476, "type": "lap"}}
+{"t_offset_ms": 41380, "topic": "race/car1/fuel", "payload": {"ts": 1787690103631, "percent": 77.4, "eta_s": 139.4}}
+{"t_offset_ms": 41381, "topic": "race/car1/tires", "payload": {"ts": 1787690103631, "fl": 0.729, "fr": 0.797, "rl": 0.774, "rr": 0.819, "eta_s": 109.4}}
+{"t_offset_ms": 41515, "topic": "race/car1/battery", "payload": {"ts": 1787690103764, "voltage": 10.782, "percent": 22.1, "current_ma": 2663.0, "eta_s": 44.2}}
+{"t_offset_ms": 41537, "topic": "race/car1/state", "payload": {"ts": 1787690103787, "speed": 1.16, "steering": 0.11, "throttle": 0.78, "lap": 9, "lap_time_s": 5.24}}
+{"t_offset_ms": 41537, "topic": "race/car1/imu", "payload": {"ts": 1787690103787, "ax": -0.0104, "ay": 0.1768, "az": 0.9851, "gx": -0.57, "gy": 1.57, "gz": -0.25}}
+{"t_offset_ms": 43216, "topic": "race/car1/fuel", "payload": {"ts": 1787690105462, "percent": 73.4, "eta_s": 132.0}}
+{"t_offset_ms": 43216, "topic": "race/car1/tires", "payload": {"ts": 1787690105462, "fl": 0.68, "fr": 0.76, "rl": 0.734, "rr": 0.787, "eta_s": 102.0}}
+{"t_offset_ms": 43350, "topic": "race/car1/battery", "payload": {"ts": 1787690105596, "voltage": 10.697, "percent": 18.4, "current_ma": 2903.0, "eta_s": 36.9}}
+{"t_offset_ms": 43398, "topic": "race/car1/state", "payload": {"ts": 1787690105648, "speed": 1.13, "steering": -0.158, "throttle": 0.77, "lap": 9, "lap_time_s": 12.68}}
+{"t_offset_ms": 43398, "topic": "race/car1/imu", "payload": {"ts": 1787690105648, "ax": -0.0632, "ay": 0.1665, "az": 0.9821, "gx": -0.73, "gy": 1.96, "gz": -7.75}}
+{"t_offset_ms": 44733, "topic": "race/car1/event", "payload": {"ts": 1787690106982, "type": "lap"}}
+{"t_offset_ms": 45087, "topic": "race/car1/fuel", "payload": {"ts": 1787690107336, "percent": 69.2, "eta_s": 124.5}}
+{"t_offset_ms": 45087, "topic": "race/car1/tires", "payload": {"ts": 1787690107336, "fl": 0.63, "fr": 0.723, "rl": 0.692, "rr": 0.754, "eta_s": 94.5}}
+{"t_offset_ms": 45231, "topic": "race/car1/battery", "payload": {"ts": 1787690107477, "voltage": 10.609, "percent": 14.7, "current_ma": 2871.0, "eta_s": 29.4}}
+{"t_offset_ms": 45249, "topic": "race/car1/state", "payload": {"ts": 1787690107494, "speed": 1.11, "steering": -0.369, "throttle": 0.8, "lap": 10, "lap_time_s": 2.05}}
+{"t_offset_ms": 45250, "topic": "race/car1/imu", "payload": {"ts": 1787690107499, "ax": -0.0926, "ay": 0.2227, "az": 0.98, "gx": -0.76, "gy": 2.57, "gz": -12.04}}
+{"t_offset_ms": 46948, "topic": "race/car1/fuel", "payload": {"ts": 1787690109198, "percent": 65.1, "eta_s": 117.1}}
+{"t_offset_ms": 46948, "topic": "race/car1/tires", "payload": {"ts": 1787690109198, "fl": 0.581, "fr": 0.685, "rl": 0.651, "rr": 0.72, "eta_s": 87.1}}
+{"t_offset_ms": 47075, "topic": "race/car1/battery", "payload": {"ts": 1787690109324, "voltage": 10.523, "percent": 11.0, "current_ma": 2983.0, "eta_s": 22.0}}
+{"t_offset_ms": 47100, "topic": "race/car1/state", "payload": {"ts": 1787690109347, "speed": 1.1, "steering": -0.45, "throttle": 0.85, "lap": 10, "lap_time_s": 9.46}}
+{"t_offset_ms": 47100, "topic": "race/car1/imu", "payload": {"ts": 1787690109348, "ax": -0.0893, "ay": 0.2827, "az": 0.9827, "gx": -0.94, "gy": 2.83, "gz": -11.31}}
+{"t_offset_ms": 49242, "topic": "race/car1/event", "payload": {"ts": 1787690111492, "type": "lap"}}
+{"t_offset_ms": 49254, "topic": "race/car1/strategy", "payload": {"ts": 1787690111502, "pit_recommended": false, "reason": "race_complete", "target_lap": 0}}
+{"t_offset_ms": 49255, "topic": "race/car1/strategy", "payload": {"ts": 1787690111503, "pit_recommended": false, "reason": "", "target_lap": 0}}

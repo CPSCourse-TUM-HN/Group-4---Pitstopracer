@@ -1,9 +1,9 @@
 import {
   CENTERLINE, CENTERLINE_CUM_CM, FIELD_CM, PIT_ENTRY_PROGRESS, PIT_EXIT_PROGRESS,
-  PIT_LANE, START_FINISH, TRACK_LENGTH_CM,
+  PIT_LANE, PIT_LANE_LENGTH_CM, PIT_BOX_CM, PIT_WIDTH_CM, START_FINISH, TRACK_LENGTH_CM,
 } from '../monza.generated';
 import {
-  medianLapTime, positionInPit, positionOnCenterline, PIT_SERVICE_WINDOW,
+  lapProgress, medianLapTime, positionInPit, positionOnCenterline, PIT_SERVICE_WINDOW,
   resolveCarPose, wrapProgress,
 } from '../position';
 
@@ -143,6 +143,38 @@ describe('pit lane', () => {
     expect(dist(positionInPit(-5), positionInPit(0))).toBeLessThan(0.5);
     expect(dist(positionInPit(5), positionInPit(1))).toBeLessThan(0.5);
   });
+
+  // Regression: the hold point used to be PIT_SERVICE_WINDOW[0] * lane length,
+  // a share of the visit's duration misapplied as a share of its length. That
+  // parked the car ~104 cm from the box -- visible on a 590x1000 cm field, and
+  // during the one moment the whole pit-stop story is about.
+  it('holds the car level with the service bay, not merely somewhere in the lane', () => {
+    const [holdStart, holdEnd] = PIT_SERVICE_WINDOW;
+    const boxCentre = {
+      x: PIT_BOX_CM.x + PIT_BOX_CM.width / 2,
+      y: PIT_BOX_CM.y + PIT_BOX_CM.height / 2,
+    };
+    const parked = positionInPit((holdStart + holdEnd) / 2);
+
+    // The lane centre cannot coincide with the box centre -- the box sits
+    // beside the lane -- so allow half the box diagonal plus half the lane.
+    const tolerance = Math.hypot(PIT_BOX_CM.width, PIT_BOX_CM.height) / 2 + PIT_WIDTH_CM / 2;
+    expect(dist(parked, boxCentre)).toBeLessThan(tolerance);
+  });
+
+  it('drives in and out rather than teleporting to the box', () => {
+    const [holdStart] = PIT_SERVICE_WINDOW;
+    // Entry leg covers ground monotonically.
+    let prev = positionInPit(0);
+    for (let p = 0.02; p <= holdStart; p += 0.02) {
+      const next = positionInPit(p);
+      expect(dist(prev, next)).toBeLessThan(PIT_LANE_LENGTH_CM / 4);
+      prev = next;
+    }
+    // Exit leg ends at the lane exit.
+    expect(dist(positionInPit(1), { x: PIT_LANE[PIT_LANE.length - 1][0], y: PIT_LANE[PIT_LANE.length - 1][1] }))
+      .toBeLessThan(1);
+  });
 });
 
 describe('resolveCarPose degradation ladder', () => {
@@ -197,5 +229,51 @@ describe('medianLapTime', () => {
 
   it('discards non-finite and non-positive durations', () => {
     expect(medianLapTime([NaN, 0, -5, 18], 4)).toBe(18);
+  });
+});
+
+describe('lapProgress', () => {
+  it('maps elapsed time onto the lap', () => {
+    expect(lapProgress(0, 18)).toBeCloseTo(0);
+    expect(lapProgress(9, 18)).toBeCloseTo(0.5);
+    expect(lapProgress(17.9, 18)).toBeCloseTo(0.994, 3);
+  });
+
+  // The regression this exists for: as tires wear the car slows, so a lap runs
+  // longer than the median of the previous three. Wrapping there sent the car
+  // back across the start line and round a phantom extra lap -- 3% of frames
+  // on a recorded 10-lap race.
+  it('holds at the line when a lap overruns instead of wrapping to zero', () => {
+    const overrun = lapProgress(22.3, 18)!;         // the measured lap 6
+    expect(overrun).toBeGreaterThan(0.99);
+    expect(overrun).toBeLessThan(1);
+  });
+
+  it('never returns a value that would re-cross start/finish', () => {
+    for (const t of [18, 20, 25, 40, 180, 1e6]) {
+      const p = lapProgress(t, 18)!;
+      expect(p).toBeGreaterThanOrEqual(0);
+      expect(p).toBeLessThan(1);
+    }
+  });
+
+  it('is monotonic across an overrun, so the car never moves backwards', () => {
+    let prev = -1;
+    for (let t = 0; t <= 30; t += 0.25) {
+      const p = lapProgress(t, 18)!;
+      expect(p).toBeGreaterThanOrEqual(prev);
+      prev = p;
+    }
+  });
+
+  it('clamps a negative elapsed time to the start line', () => {
+    expect(lapProgress(-5, 18)).toBe(0);
+  });
+
+  it('returns null rather than Infinity for an unusable expected lap time', () => {
+    expect(lapProgress(9, 0)).toBeNull();
+    expect(lapProgress(9, -18)).toBeNull();
+    expect(lapProgress(9, NaN)).toBeNull();
+    expect(lapProgress(NaN, 18)).toBeNull();
   });
 });

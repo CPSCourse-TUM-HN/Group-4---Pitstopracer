@@ -83,24 +83,45 @@ def nearest_index(pts, target):
     return min(range(len(pts)), key=lambda i: math.dist(pts[i], target))
 
 
+CURVE_CMDS = re.compile(r"[CcSsQqTtAa]")
+
+
 def parse(svg: str):
     tags = re.findall(r"<path[^>]*/?>", svg)
     track = pit = box = None
+    track_tag = pit_tag = None
     for t in tags:
         sw = attr(t, "stroke-width")
         fill = attr(t, "fill") or ""
         stroke = attr(t, "stroke") or ""
         if sw == TRACK_STROKE and track is None:
-            track = points_cm(t)
+            track, track_tag = points_cm(t), t
         elif sw == PIT_STROKE and pit is None:
-            pit = points_cm(t)
+            pit, pit_tag = points_cm(t), t
         elif box is None and sw == "80" and GREEN in (fill + stroke):
             box = points_cm(t)
     missing = [n for n, v in (("centreline", track), ("pit lane", pit), ("pit box", box)) if not v]
     if missing:
         sys.exit(f"Could not find in blueprint: {', '.join(missing)}. "
                  "Stroke signatures may have changed -- inspect the SVG.")
+
+    # points_cm pulls every number pair out of `d`, which is only the set of
+    # on-path points while the path is polyline-only. A redrawn blueprint using
+    # curves would fold Bezier control points into the centreline and produce a
+    # subtly wrong track that still closes and still measures ~22 m.
+    curved = [name for name, t in (("centreline", track_tag), ("pit lane", pit_tag))
+              if t and CURVE_CMDS.search(attr(t, "d") or "")]
+    if curved:
+        sys.exit(f"{', '.join(curved)} contains curve commands. The extractor "
+                 "reads polylines only -- flatten the path in the source "
+                 "drawing, or teach points_cm to flatten Beziers.")
+
     return track, pit, box
+
+
+# The app renders into this viewBox (FIELD_CM below). Geometry outside it is
+# silently clipped by the SVG rather than reported, so verify checks the fit.
+FIELD_W_CM, FIELD_H_CM = 590, 1000
 
 
 def verify(track, pit, box) -> list[str]:
@@ -120,6 +141,27 @@ def verify(track, pit, box) -> list[str]:
         problems.append(f"pit lane has only {len(pit)} points -- too coarse")
     if len(box) < 4:
         problems.append("pit box is not a polygon")
+
+    # Everything must fit the artboard, or TrackMap's viewBox clips it away
+    # with no error anywhere.
+    for label, pts in (("centreline", track), ("pit lane", pit), ("pit box", box)):
+        oob = [(x, y) for x, y in pts
+               if not (0 <= x <= FIELD_W_CM and 0 <= y <= FIELD_H_CM)]
+        if oob:
+            x, y = oob[0]
+            problems.append(
+                f"{label} leaves the {FIELD_W_CM}x{FIELD_H_CM} cm field "
+                f"({len(oob)} pts, first at {x:.0f},{y:.0f}) -- it would be "
+                f"clipped out of the map")
+
+    # The pit lane must branch before it rejoins, or the twin's detour runs
+    # backwards around the lap.
+    entry, exit_ = nearest_index(track, pit[0]), nearest_index(track, pit[-1])
+    if entry >= exit_:
+        problems.append(
+            f"pit lane rejoins at or before it branches (entry idx {entry}, "
+            f"exit idx {exit_}) -- the lane may be drawn in reverse")
+
     return problems
 
 
