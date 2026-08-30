@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import ArcGauge from '../components/ArcGauge';
 import CarTireLayout from '../components/CarTireLayout';
@@ -10,20 +10,23 @@ import StrategyPredictor from '../components/StrategyPredictor';
 import StatusTicker from '../components/StatusTicker';
 import InfoModal, { InfoContent } from '../components/InfoModal';
 import TrackMap from '../components/TrackMap';
-import { useTelemetry } from '../mqtt/useTelemetry';
+import { useTelemetry, STALE_MS } from '../mqtt/useTelemetry';
 import { useCarPosition } from '../track/useCarPosition';
 import { TRACK_LENGTH_CM } from '../track/monza.generated';
 import { config } from '../config';
 import { pctHealth, HEALTH_COLOR, tireHealth } from '../types';
+import {
+  FUEL_BURN_PER_LAP_PCT, FUEL_PIT_THRESHOLD_PCT, SPEED_GAUGE_MAX_KMH,
+  TIRE_PIT_THRESHOLD, TOTAL_LAPS,
+} from '../raceConfig';
 
-const STALE_MS    = 5_000;
-const TOTAL_LAPS  = 10;
 
-function isStale(lastUpdateMs: Record<string, number>, suffix: string): boolean {
-  const t = lastUpdateMs[`${config.topicPrefix}/${suffix}`];
-  if (t === undefined) return false;
-  return Date.now() - t > STALE_MS;
-}
+type TirePos = 'FL' | 'FR' | 'RL' | 'RR';
+
+/** Which detail sheet is open. */
+type Sheet =
+  | { kind: 'speed' | 'battery' | 'fuel' | 'imu' | 'twin' | 'connection' }
+  | { kind: 'tire'; pos: TirePos };
 
 const STATUS_COLOR = {
   connected:    '#22c55e',
@@ -34,18 +37,39 @@ const STATUS_COLOR = {
 } as const;
 
 export default function DashboardScreen() {
-  const { status, lastUpdateMs, state, battery, fuel, tires, strategy, recentEvents, imu } =
+  const { status, stale, dropped, state, battery, fuel, tires, strategy, recentEvents, imu, pose } =
     useTelemetry();
 
-  const car = useCarPosition(state, recentEvents);
+  const car = useCarPosition(state, recentEvents, pose, stale.pose);
 
-  const staleState   = isStale(lastUpdateMs, 'state');
-  const staleBattery = isStale(lastUpdateMs, 'battery');
-  const staleFuel    = isStale(lastUpdateMs, 'fuel');
-  const staleTires   = isStale(lastUpdateMs, 'tires');
-  const staleImu     = isStale(lastUpdateMs, 'imu');
+  const staleState   = stale.state;
+  const staleBattery = stale.battery;
+  const staleFuel    = stale.fuel;
+  const staleTires   = stale.tires;
+  const staleImu     = stale.imu;
 
-  const [modal, setModal] = useState<InfoContent | null>(null);
+  const droppedTotal = Object.values(dropped).reduce((a, b) => a + b, 0);
+  const staleSuffixes = Object.entries(stale).filter(([, s]) => s).map(([k]) => k);
+
+  // Which sheet is open -- not its contents.
+  //
+  // Storing the built InfoContent froze every number at the moment of the tap,
+  // so a sheet headed "live value" showed a snapshot that never moved while it
+  // was on screen. Holding the key and rebuilding on each render means the
+  // sheet tracks the telemetry behind it.
+  const [sheet, setSheet] = useState<Sheet | null>(null);
+
+  // Stable identities. TrackMap is memoised on its props, and an inline arrow
+  // would be a new function on each of the ~40 renders a second that state and
+  // imu together produce -- defeating the memo entirely.
+  const openTwin       = useCallback(() => setSheet({ kind: 'twin' }), []);
+  const openSpeed      = useCallback(() => setSheet({ kind: 'speed' }), []);
+  const openBattery    = useCallback(() => setSheet({ kind: 'battery' }), []);
+  const openFuel       = useCallback(() => setSheet({ kind: 'fuel' }), []);
+  const openImu        = useCallback(() => setSheet({ kind: 'imu' }), []);
+  const openConnection = useCallback(() => setSheet({ kind: 'connection' }), []);
+  const openTire       = useCallback((pos: TirePos) => setSheet({ kind: 'tire', pos }), []);
+  const closeSheet     = useCallback(() => setSheet(null), []);
 
   const lap        = state?.lap ?? 1;
   const lapTimeSec = state?.lap_time_s ?? 0;
@@ -53,17 +77,21 @@ export default function DashboardScreen() {
   const lapSecs    = (lapTimeSec % 60).toFixed(1).padStart(4, '0');
   const lapTimeStr = `${lapMins}:${lapSecs}`;
 
-  const speedKmh  = state ? state.speed * 3.6 : 0;
+  // NaN, not 0, for anything not yet reported. ArcGauge degrades a non-finite
+  // value to an empty dial and a dash; a zero would be a reading we have not
+  // taken -- and pctHealth(0) is red, so the battery gauge showed a confident
+  // critical 0% before the first message ever arrived.
+  const speedKmh  = state ? state.speed * 3.6 : NaN;
   const throttlePct = state ? Math.round(state.throttle * 100) : 0;
-  const batPct    = battery?.percent ?? 0;
-  const batColor  = HEALTH_COLOR[pctHealth(batPct)];
+  const batPct    = battery ? battery.percent : NaN;
+  const batColor  = battery ? HEALTH_COLOR[pctHealth(battery.percent)] : '#4b5563';
   const speedColor = '#f59e0b';
-  const etaLaps   = fuel ? Math.floor(fuel.percent / 10) : undefined;
+  const etaLaps   = fuel ? Math.floor(fuel.percent / FUEL_BURN_PER_LAP_PCT) : undefined;
 
   // ── Info modal builders ────────────────────────────────────────────────────
 
-  function openSpeed() {
-    setModal({
+  function buildSpeed(): InfoContent {
+    return {
       title: 'Speed & Throttle',
       value: `${speedKmh.toFixed(1)} km/h`,
       rows: [
@@ -77,13 +105,15 @@ export default function DashboardScreen() {
       description:
         'Speed is derived from wheel encoder ticks via the VESC motor controller. ' +
         'The JetRacer uses a Flipsky VESC to send PWM commands for throttle (0–1) and ' +
-        'steering (−1 to +1). Max speed at full throttle ≈ 4 m/s (14.4 km/h) on flat ground.',
+        `steering (−1 to +1). Nominal speed is the measured ${(TRACK_LENGTH_CM / 100).toFixed(2)} m lap ` +
+        'divided by an 18 s lap time — about 1.22 m/s (4.4 km/h), which is what a JetRacer ' +
+        'actually does on a 6×10 m foam mat with 72 cm lanes.',
       source: 'VESC speed controller + wheel odometry',
-    });
+    };
   }
 
-  function openBattery() {
-    setModal({
+  function buildBattery(): InfoContent {
+    return {
       title: 'Battery',
       value: battery ? `${battery.percent.toFixed(0)}%` : '—',
       rows: [
@@ -101,30 +131,30 @@ export default function DashboardScreen() {
         'High current draw (>3000 mA) during hard acceleration. ' +
         'Voltage drops ~0.3V per lap at race speed.',
       source: 'INA219 I²C power monitor',
-    });
+    };
   }
 
-  function openFuel() {
-    setModal({
+  function buildFuel(): InfoContent {
+    return {
       title: 'Energy Budget (Fuel)',
       value: fuel ? `${fuel.percent.toFixed(0)}%` : '—',
       rows: [
         { label: 'Remaining',    value: fuel ? `${fuel.percent.toFixed(1)}%` : '—' },
         { label: 'ETA',          value: fuel ? `${Math.round(fuel.eta_s)}s` : '—' },
         { label: 'ETA (laps)',   value: etaLaps !== undefined ? `~${etaLaps} laps` : '—' },
-        { label: 'Burn rate',    value: '~10% / lap', note: 'At nominal speed' },
+        { label: 'Burn rate',    value: `~${FUEL_BURN_PER_LAP_PCT}% / lap`, note: 'Assumed, at nominal speed' },
       ],
       description:
         '"Fuel" represents the logical energy budget — a software-tracked metric that ' +
         'combines battery state-of-charge with estimated heat/wear budget. ' +
         'In a real CPS this would fuse INA219 current-integral with thermal model outputs. ' +
-        'Pit strategy triggers when fuel < 15% to guarantee enough energy for a safe return.',
+        `Pit strategy triggers when fuel < ${FUEL_PIT_THRESHOLD_PCT}% to guarantee enough energy for a safe return.`,
       source: 'Derived from INA219 current integral',
-    });
+    };
   }
 
-  function openImu() {
-    setModal({
+  function buildImu(): InfoContent {
+    return {
       title: 'IMU — MPU9250',
       value: imu ? `${Math.sqrt(imu.ax ** 2 + imu.ay ** 2).toFixed(2)} G` : '—',
       rows: [
@@ -143,10 +173,11 @@ export default function DashboardScreen() {
         'for higher-precision pose estimation. The dot on the G-force plot shows ' +
         'lateral vs longitudinal load — centre = straight, right = right-hand corner.',
       source: 'MPU9250 via I²C + EKF fusion',
-    });
+    };
   }
 
-  function openTire(pos: string, value: number) {
+  function buildTire(pos: TirePos): InfoContent {
+    const value = tires ? tires[pos.toLowerCase() as 'fl' | 'fr' | 'rl' | 'rr'] : 0;
     const h = tireHealth(value);
     const pct = Math.round(value * 100);
     const wearDesc: Record<string, string> = {
@@ -155,13 +186,13 @@ export default function DashboardScreen() {
       RL: 'Rear-left is the rear drive tire on the inside of most corners — moderate wear from drive torque.',
       RR: 'Rear-right drive tire. Wears from longitudinal traction load. Often the limiting tire on oval tracks.',
     };
-    setModal({
+    return {
       title: `Tire — ${pos}`,
       value: `${pct}%`,
       rows: [
         { label: 'Health',         value: `${pct}%`,                   note: h.toUpperCase() },
         { label: 'Status',         value: h === 'red' ? 'CRITICAL — pit now' : h === 'yellow' ? 'Warning' : 'Good' },
-        { label: 'Pit threshold',  value: '25%',                       note: 'Below this → pit_recommended' },
+        { label: 'Pit threshold',  value: `${TIRE_PIT_THRESHOLD * 100}%`, note: 'Below this → pit_recommended' },
         { label: 'ETA',            value: tires ? `${Math.round(tires.eta_s)}s` : '—' },
       ],
       description:
@@ -170,11 +201,11 @@ export default function DashboardScreen() {
         'On the real JetRacer, wear could be inferred from grip loss (understeer detected via IMU ' +
         'vs commanded steering delta). Thresholds: green ≥60%, yellow 30–59%, red <30%.',
       source: 'Estimated from lap model + IMU lateral G',
-    });
+    };
   }
 
-  function openTwin() {
-    setModal({
+  function buildTwin(): InfoContent {
+    return {
       title: 'Digital Twin — Track Position',
       value: car.pose.source === 'pose' ? 'Measured' : car.pose.source === 'progress' ? 'Estimated' : 'Unknown',
       rows: [
@@ -198,11 +229,11 @@ export default function DashboardScreen() {
         'If the perception pipeline ever publishes a pose topic, it takes priority automatically ' +
         'and this readout switches to "measured".',
       source: 'Lap progress × extracted track geometry',
-    });
+    };
   }
 
-  function openConnection() {
-    setModal({
+  function buildConnection(): InfoContent {
+    return {
       title: 'MQTT Connection',
       value: status,
       rows: [
@@ -211,6 +242,13 @@ export default function DashboardScreen() {
         { label: 'Protocol',  value: 'MQTT over WebSocket' },
         { label: 'Topics',    value: '7 active', note: 'QoS 0 telemetry + QoS 1 events' },
         { label: 'Reconnect', value: `${config.reconnectMs}ms` },
+        { label: 'Stale feeds',
+          value: staleSuffixes.length ? staleSuffixes.join(', ') : 'none',
+          note: `No message for >${STALE_MS / 1000}s` },
+        { label: 'Dropped payloads',
+          value: droppedTotal === 0 ? '0' : String(droppedTotal),
+          note: droppedTotal === 0 ? 'All payloads matched the packet spec'
+                                   : 'Failed the per-topic shape check' },
       ],
       description:
         'The app connects to the Mosquitto broker via MQTT over WebSocket (port 9001). ' +
@@ -218,8 +256,22 @@ export default function DashboardScreen() {
         'QoS 0 is used for high-rate telemetry (20 Hz state, 2 Hz sensors) to minimise latency. ' +
         'QoS 1 is used for strategy and event messages to guarantee delivery.',
       source: 'Eclipse Mosquitto v2 broker',
-    });
+    };
   }
+
+  function buildSheet(k: Sheet): InfoContent {
+    switch (k.kind) {
+      case 'speed':      return buildSpeed();
+      case 'battery':    return buildBattery();
+      case 'fuel':       return buildFuel();
+      case 'imu':        return buildImu();
+      case 'twin':       return buildTwin();
+      case 'connection': return buildConnection();
+      case 'tire':       return buildTire(k.pos);
+    }
+  }
+
+  const modal: InfoContent | null = sheet === null ? null : buildSheet(sheet);
 
   return (
     <View style={styles.screen}>
@@ -261,20 +313,21 @@ export default function DashboardScreen() {
             <Pressable style={styles.miniTile} onPress={openSpeed}>
               <Text style={styles.miniLabel}>SPEED</Text>
               <Text style={styles.miniValue}>
-                {speedKmh.toFixed(0)}<Text style={styles.miniUnit}> km/h</Text>
+                {state ? speedKmh.toFixed(0) : '—'}<Text style={styles.miniUnit}> km/h</Text>
               </Text>
             </Pressable>
 
             <Pressable style={styles.miniTile} onPress={openBattery}>
               <Text style={styles.miniLabel}>BATTERY</Text>
-              <Text style={[styles.miniValue, { color: batColor }]}>
-                {battery ? `${batPct.toFixed(0)}%` : '—'}
+              <Text style={[styles.miniValue, { color: staleBattery ? '#4b5563' : batColor }]}>
+                {battery && !staleBattery ? `${battery.percent.toFixed(0)}%` : '—'}
               </Text>
             </Pressable>
 
             <Pressable style={styles.miniTile} onPress={openFuel}>
               <Text style={styles.miniLabel}>FUEL</Text>
-              <Text style={[styles.miniValue, { color: HEALTH_COLOR[pctHealth(fuel?.percent ?? 0)] }]}>
+              <Text style={[styles.miniValue,
+                { color: fuel && !staleFuel ? HEALTH_COLOR[pctHealth(fuel.percent)] : '#4b5563' }]}>
                 {fuel ? `${fuel.percent.toFixed(0)}%` : '—'}
               </Text>
             </Pressable>
@@ -287,7 +340,7 @@ export default function DashboardScreen() {
                   <Pressable
                     key={pos}
                     style={[styles.chip, { borderColor: c }]}
-                    onPress={() => v !== undefined && openTire(pos.toUpperCase(), v)}
+                    onPress={() => v !== undefined && openTire(pos.toUpperCase() as TirePos)}
                   >
                     <Text style={[styles.chipText, { color: c }]}>
                       {pos.toUpperCase()} {v !== undefined ? `${Math.round(v * 100)}%` : '—'}
@@ -309,7 +362,7 @@ export default function DashboardScreen() {
         <View style={styles.gaugesRow}>
           <ArcGauge
             value={speedKmh}
-            max={20}
+            max={SPEED_GAUGE_MAX_KMH}
             label="SPEED"
             unit="km/h"
             color={speedColor}
@@ -319,6 +372,7 @@ export default function DashboardScreen() {
           <ArcGauge
             value={batPct}
             max={100}
+            stale={staleBattery}
             label="BATTERY"
             unit="%"
             subText={battery ? `${battery.voltage.toFixed(1)}V · ${battery.current_ma.toFixed(0)}mA` : undefined}
@@ -376,7 +430,7 @@ export default function DashboardScreen() {
       />
 
       {/* ── INFO MODAL ── */}
-      <InfoModal visible={modal !== null} info={modal} onClose={() => setModal(null)} />
+      <InfoModal visible={modal !== null} info={modal} onClose={closeSheet} />
     </View>
   );
 }

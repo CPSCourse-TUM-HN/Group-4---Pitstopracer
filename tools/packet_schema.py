@@ -8,6 +8,7 @@ what tells you whether its payloads are actually conformant.
 Kept dependency-free on purpose so any team member can run it.
 """
 
+import math
 from typing import Any, Callable, NamedTuple, Optional
 
 
@@ -130,6 +131,14 @@ def validate(topic: str, payload: Any) -> list[str]:
         else:  # numeric
             if isinstance(v, bool) or not isinstance(v, (int, float)):
                 problems.append(f"'{f.name}' is {type(v).__name__}, expected number")
+                continue
+            # NaN and +/-Inf are real floats and compare False against every
+            # bound, so the range checks below wave them straight through.
+            # json.loads accepts bare NaN/Infinity by default, which makes this
+            # reachable from any producer, and a checker that reports "conforms"
+            # on NaN is worse than no checker at all.
+            if not math.isfinite(v):
+                problems.append(f"'{f.name}' is {v}, expected a finite number")
                 continue
 
         if f.allowed is not None and v not in f.allowed:

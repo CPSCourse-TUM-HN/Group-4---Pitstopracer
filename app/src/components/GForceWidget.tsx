@@ -11,13 +11,26 @@ interface Props {
 const SIZE = 90;
 const MAX_G = 1.5;
 
-export default function GForceWidget({ imu, stale, onPress }: Props) {
+function GForceWidget({ imu, stale, onPress }: Props) {
   // ax = lateral (left/right), ay = longitudinal (fwd/back)
+  //
+  // A missing reading is not a zero reading. Defaulting to 0 drew a dot dead
+  // centre and printed "0.00 G" before the IMU had ever spoken -- a fabricated
+  // measurement, and indistinguishable from a car sitting still.
+  const known = imu !== null && imu !== undefined;
   const ax = imu?.ax ?? 0;
   const ay = imu?.ay ?? 0;
 
-  const dotX = SIZE / 2 + (ax / MAX_G) * (SIZE / 2 - 10);
-  const dotY = SIZE / 2 - (ay / MAX_G) * (SIZE / 2 - 10);
+  // Pin to the rim past MAX_G rather than letting the circle's overflow:hidden
+  // swallow the dot -- "at the limit" reads correctly, "gone" reads as broken.
+  const R = SIZE / 2 - 10;
+  const nx = ax / MAX_G;
+  const ny = ay / MAX_G;
+  const mag = Math.hypot(nx, ny);
+  const k = mag > 1 ? 1 / mag : 1;
+  const dotX = SIZE / 2 + nx * k * R;
+  const dotY = SIZE / 2 - ny * k * R;
+  const atLimit = mag > 1;
 
   const totalG = Math.sqrt(ax * ax + ay * ay).toFixed(2);
 
@@ -31,14 +44,20 @@ export default function GForceWidget({ imu, stale, onPress }: Props) {
         {/* rings */}
         <View style={[styles.ring, { width: SIZE * 0.5, height: SIZE * 0.5, borderRadius: SIZE * 0.25 }]} />
         {/* dot */}
-        {!stale && (
-          <View style={[styles.dot, { left: dotX - 5, top: dotY - 5 }]} />
+        {!stale && known && (
+          <View style={[
+            styles.dot,
+            { left: dotX - 5, top: dotY - 5 },
+            atLimit && styles.dotAtLimit,
+          ]} />
         )}
       </View>
-      <Text style={[styles.value, stale && styles.staleText]}>
-        {stale ? 'stale' : `${totalG} G`}
+      <Text style={[styles.value, (stale || !known) && styles.staleText]}>
+        {!known ? '—' : stale ? 'stale' : `${totalG} G`}
       </Text>
-      <Text style={styles.sub}>ax {ax.toFixed(2)}  ay {ay.toFixed(2)}</Text>
+      <Text style={styles.sub}>
+        {known ? `ax ${ax.toFixed(2)}  ay ${ay.toFixed(2)}` : 'awaiting IMU'}
+      </Text>
     </Pressable>
   );
 }
@@ -98,6 +117,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
+  dotAtLimit: {
+    backgroundColor: '#ef4444',
+    shadowColor: '#ef4444',
+  },
   value: {
     fontSize: 14,
     fontWeight: '700',
@@ -111,3 +134,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+
+/**
+ * Memoised: imu arrives at 20 Hz, half the render rate, so most renders cannot change anything here. Props are
+ * plain values and the handlers are useCallback'd in DashboardScreen, so the
+ * default shallow comparison is enough.
+ */
+export default React.memo(GForceWidget);

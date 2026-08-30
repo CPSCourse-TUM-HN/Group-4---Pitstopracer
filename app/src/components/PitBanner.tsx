@@ -6,7 +6,7 @@ interface Props {
   strategy: StrategyMsg | null;
 }
 
-export default function PitBanner({ strategy }: Props) {
+function PitBanner({ strategy }: Props) {
   const opacity = useRef(new Animated.Value(1)).current;
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -72,3 +72,10 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 });
+
+/**
+ * Memoised: strategy arrives at 2 Hz, so most renders cannot change anything here. Props are
+ * plain values and the handlers are useCallback'd in DashboardScreen, so the
+ * default shallow comparison is enough.
+ */
+export default React.memo(PitBanner);

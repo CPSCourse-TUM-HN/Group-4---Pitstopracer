@@ -90,13 +90,19 @@ def main():
     if not records:
         sys.exit(f"No usable records in {args.session}")
 
-    span = records[-1]["t_offset_ms"] / 1000.0
+    # max, not [-1]: a hand-edited or concatenated session need not be in
+    # chronological order, and a wrong span only misreports the banner.
+    span = max(r["t_offset_ms"] for r in records) / 1000.0
     print(f"Replaying {len(records)} messages ({span:.1f}s of telemetry) "
           f"at {args.speed}x{' on loop' if args.loop else ''}")
 
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="session-player")
     host, _, port = args.broker.partition(":")
-    client.connect(host, int(port) if port else 1883, keepalive=60)
+    try:
+        client.connect(host, int(port) if port else 1883, keepalive=60)
+    except OSError as e:
+        sys.exit(f"Cannot reach broker at {args.broker}: {e}. "
+                 "Is it running?  cd infra && docker compose up -d")
     client.loop_start()
 
     try:

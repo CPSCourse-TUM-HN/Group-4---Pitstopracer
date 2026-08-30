@@ -10,6 +10,8 @@ interface Props {
   subText?: string;
   color: string;
   size?: number;
+  /** Dim and withhold the value when the feed behind it has gone quiet. */
+  stale?: boolean;
   onPress?: () => void;
 }
 
@@ -28,8 +30,12 @@ function describeArc(cx: number, cy: number, r: number, startDeg: number, endDeg
   return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 0 ${e.x} ${e.y}`;
 }
 
-export default function ArcGauge({ value, max, label, unit, subText, color, size = 130, onPress }: Props) {
-  const pct    = Math.min(1, Math.max(0, value / max));
+function ArcGauge({ value, max, label, unit, subText, color, size = 130, stale, onPress }: Props) {
+  // A non-finite value or a zero max would put NaN into the arc's path data,
+  // which react-native-svg can throw on rather than skip. Degrade to an empty
+  // gauge instead.
+  const safe   = !stale && Number.isFinite(value) && Number.isFinite(max) && max > 0;
+  const pct    = safe ? Math.min(1, Math.max(0, value / max)) : 0;
   const endDeg = START_DEG + pct * SWEEP_DEG;
   const cx     = size / 2;
   const cy     = size / 2;
@@ -49,12 +55,13 @@ export default function ArcGauge({ value, max, label, unit, subText, color, size
           )}
         </Svg>
         <View style={styles.center}>
-          <Text style={[styles.value, { color }]}>{Math.round(value)}</Text>
+          <Text style={[styles.value, { color }]}>{safe ? Math.round(value) : '—'}</Text>
           <Text style={styles.unit}>{unit}</Text>
         </View>
         <Text style={[styles.label, { bottom: 6 }]}>{label}</Text>
       </View>
-      {subText ? <Text style={styles.sub}>{subText}</Text> : null}
+      {stale ? <Text style={styles.staleTag}>stale</Text>
+             : subText ? <Text style={styles.sub}>{subText}</Text> : null}
       {onPress ? <Text style={styles.tapHint}>tap for details</Text> : null}
     </Pressable>
   );
@@ -88,6 +95,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
+  staleTag: {
+    fontSize: 11,
+    color: '#4b5563',
+  },
   sub: {
     fontSize: 11,
     color: '#6b7280',
@@ -99,3 +110,10 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 });
+
+/**
+ * Memoised: the battery gauge changes at 2 Hz, so most renders cannot change anything here. Props are
+ * plain values and the handlers are useCallback'd in DashboardScreen, so the
+ * default shallow comparison is enough.
+ */
+export default React.memo(ArcGauge);

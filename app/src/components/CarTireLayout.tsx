@@ -36,7 +36,7 @@ function TireChip({ label, value, stale, onPress }: {
   );
 }
 
-export default function CarTireLayout({ tires, stale, onTirePress }: Props) {
+function CarTireLayout({ tires, stale, onTirePress }: Props) {
   const tireVal = (pos: TirePos): number | null => {
     if (!tires) return null;
     return tires[pos.toLowerCase() as 'fl' | 'fr' | 'rl' | 'rr'];
@@ -154,3 +154,10 @@ const styles = StyleSheet.create({
     borderColor: '#2a2d35',
   },
 });
+
+/**
+ * Memoised: tires arrive at 2 Hz; the dashboard renders at ~40, so most renders cannot change anything here. Props are
+ * plain values and the handlers are useCallback'd in DashboardScreen, so the
+ * default shallow comparison is enough.
+ */
+export default React.memo(CarTireLayout);

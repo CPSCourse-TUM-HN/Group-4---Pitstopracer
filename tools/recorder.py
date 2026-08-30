@@ -80,13 +80,31 @@ class Recorder:
         self.fh = self.out_path.open("w")
 
         client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="session-recorder")
-        client.on_connect = lambda c, u, f, rc, p: print(
-            f"Connected, recording {self.topic_filter}" if rc == 0 else f"Connect failed: {rc}")
+
+        # Subscribe from on_connect, not once after connect(). Two reasons:
+        # MQTT requires the client to wait for CONNACK before sending anything
+        # else, and -- the one that actually bites -- paho re-runs on_connect
+        # after an automatic reconnect. Subscribing once meant that if the
+        # broker restarted mid-session the recorder stayed connected, captured
+        # nothing further, and reported a short recording as if it were the
+        # whole race.
+        def on_connect(c, _u, _f, rc, _p):
+            if rc == 0:
+                c.subscribe(self.topic_filter, qos=1)
+                print(f"Connected, recording {self.topic_filter}")
+            else:
+                print(f"Connect failed: {rc}")
+
+        client.on_connect = on_connect
         client.on_message = self.on_message
 
         host, _, port = self.broker.partition(":")
-        client.connect(host, int(port) if port else 1883, keepalive=60)
-        client.subscribe(self.topic_filter, qos=1)
+        try:
+            client.connect(host, int(port) if port else 1883, keepalive=60)
+        except OSError as e:
+            self.fh.close()
+            sys.exit(f"Cannot reach broker at {self.broker}: {e}. "
+                     "Is it running?  cd infra && docker compose up -d")
         client.loop_start()
 
         started = time.time()
@@ -104,11 +122,16 @@ class Recorder:
         self.summarise()
 
     def summarise(self):
-        span = (self.last_ts - self.first_ts) if self.first_ts and self.last_ts else 0.0
+        # `is not None`, not truthiness: a first timestamp of exactly 0.0 is
+        # falsy, which would collapse the span and report every topic as SLOW.
+        span = (self.last_ts - self.first_ts) \
+            if self.first_ts is not None and self.last_ts is not None else 0.0
         total = sum(self.counts.values())
 
         print()
         print(f"Recorded {total} messages over {span:.1f}s -> {self.out_path}")
+        if self.bad_json:
+            print(f"  {self.bad_json} of them were not valid JSON (kept verbatim for replay)")
         if total == 0:
             print("Nothing captured. Is a publisher running?")
             return

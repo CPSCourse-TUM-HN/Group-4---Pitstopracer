@@ -10,7 +10,7 @@ interface Props {
 
 const HEALTH_COLOR = { green: '#22c55e', yellow: '#f59e0b', red: '#ef4444' };
 
-export default function FuelBar({ percent, etaLaps, stale }: Props) {
+function FuelBar({ percent, etaLaps, stale }: Props) {
   const h     = percent !== null ? pctHealth(percent) : 'green';
   const color = HEALTH_COLOR[h];
   const width = percent !== null ? `${Math.max(0, Math.min(100, percent))}%` : '0%';
@@ -28,8 +28,12 @@ export default function FuelBar({ percent, etaLaps, stale }: Props) {
       </View>
       <View style={styles.footer}>
         <Text style={styles.cap}>0</Text>
-        <Text style={[styles.pct, { color: stale ? '#4b5563' : color }]}>
-          {stale || percent === null ? 'stale' : `${Math.round(percent)}%`}
+        <Text style={[styles.pct, { color: stale || percent === null ? '#4b5563' : color }]}>
+          {/* "stale" means a feed stopped; before first contact there is
+              nothing to be stale, and saying so misdirects anyone debugging a
+              broker that never came up. Absent reads as a dash, like every
+              other tile. */}
+          {percent === null ? '—' : stale ? 'stale' : `${Math.round(percent)}%`}
         </Text>
         <Text style={styles.cap}>F</Text>
       </View>
@@ -81,3 +85,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+/**
+ * Memoised: fuel arrives at 2 Hz, so most renders cannot change anything here. Props are
+ * plain values and the handlers are useCallback'd in DashboardScreen, so the
+ * default shallow comparison is enough.
+ */
+export default React.memo(FuelBar);

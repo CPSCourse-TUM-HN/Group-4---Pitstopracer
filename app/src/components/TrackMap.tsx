@@ -25,7 +25,7 @@ function toPointsString(pts: readonly (readonly [number, number])[]): string {
   return pts.map(([x, y]) => `${x},${y}`).join(' ');
 }
 
-export default function TrackMap({ pose, inPit, stale, height, onPress }: Props) {
+function TrackMap({ pose, inPit, stale, height, onPress }: Props) {
   // 627 points; joining them is not free, and the geometry never changes.
   const centerline = useMemo(() => toPointsString(CENTERLINE), []);
   const pitLane = useMemo(() => toPointsString(PIT_LANE), []);
@@ -87,6 +87,36 @@ export default function TrackMap({ pose, inPit, stale, height, onPress }: Props)
     </Pressable>
   );
 }
+
+/**
+ * Re-render only when something drawn actually moved.
+ *
+ * `state` and `imu` both arrive at 20 Hz, so the dashboard renders ~40 times a
+ * second, and `pose` is a fresh object on every one of them. Without this the
+ * map redraws a 627-point SVG polyline on IMU messages that cannot change
+ * anything on it -- half the redraws were pure waste.
+ *
+ * Position is compared with a tolerance: sub-millimetre changes on a 590x1000
+ * cm field are invisible, and the marker is 30 cm across.
+ */
+export const EPSILON_CM = 0.05;
+export const EPSILON_DEG = 0.1;
+
+/** Exported so the memo can be tested: one that never fires is worse than none. */
+export function propsEqual(a: Props, b: Props): boolean {
+  return (
+    a.inPit === b.inPit &&
+    a.stale === b.stale &&
+    a.height === b.height &&
+    a.onPress === b.onPress &&
+    a.pose.source === b.pose.source &&
+    Math.abs(a.pose.x - b.pose.x) < EPSILON_CM &&
+    Math.abs(a.pose.y - b.pose.y) < EPSILON_CM &&
+    Math.abs(a.pose.heading - b.pose.heading) < EPSILON_DEG
+  );
+}
+
+export default React.memo(TrackMap, propsEqual);
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center' },

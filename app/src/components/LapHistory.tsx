@@ -6,7 +6,7 @@ interface Props {
   totalLaps: number;
 }
 
-export default function LapHistory({ currentLap, totalLaps }: Props) {
+function LapHistory({ currentLap, totalLaps }: Props) {
   return (
     <View style={styles.row}>
       {Array.from({ length: totalLaps }, (_, i) => {
@@ -50,3 +50,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
 });
+
+/**
+ * Memoised: the lap counter changes once every 18 s, so most renders cannot change anything here. Props are
+ * plain values and the handlers are useCallback'd in DashboardScreen, so the
+ * default shallow comparison is enough.
+ */
+export default React.memo(LapHistory);

@@ -19,6 +19,13 @@ export function connect(
     reconnectPeriod: reconnectMs,
     connectTimeout: 10_000,
     keepalive: 30,
+    // Stated rather than inherited. It is mqtt.js's default today, but the
+    // whole reconnect story depends on it: without resubscription the client
+    // comes back after a broker restart, reports itself connected, and then
+    // receives nothing -- a dashboard frozen on stale values while its badge
+    // says live. tools/recorder.py had precisely that bug.
+    resubscribe: true,
+    clean: true,
   });
 
   client.on('connect', () => onStatus('connected'));

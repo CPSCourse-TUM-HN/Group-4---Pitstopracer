@@ -22,8 +22,9 @@ export default function TireCard({ position, value, stale }: Props) {
   return (
     <View style={[styles.card, { backgroundColor: colors.bg, borderColor: colors.border }]}>
       <Text style={styles.position}>{position}</Text>
-      {stale || value === null ? (
-        <Text style={styles.stale}>stale</Text>
+      {value === null || stale ? (
+        // Absent and stale are different states; only one of them is a fault.
+        <Text style={styles.stale}>{value === null ? '—' : 'stale'}</Text>
       ) : (
         <>
           <Text style={styles.pct}>{Math.round(value * 100)}%</Text>

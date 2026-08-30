@@ -56,6 +56,18 @@ export interface ImuMsg {
   gz: number;   // yaw rate   deg/s
 }
 
+/**
+ * Optional localization. Field coordinates in centimetres, matching the
+ * extracted track geometry. Nothing is obliged to publish this; when something
+ * does, the map's position source flips from 'estimated' to 'measured'.
+ */
+export interface PoseMsg {
+  ts: number;
+  x: number;        // cm, 0..590
+  y: number;        // cm, 0..1000
+  heading?: number; // degrees, 0 = +x, clockwise
+}
+
 // ── Health helpers ────────────────────────────────────────────────────────────
 
 export type HealthColor = 'green' | 'yellow' | 'red';
