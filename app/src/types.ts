@@ -8,19 +8,23 @@ export interface StateMsg {
   throttle: number;    // 0.0 to 1.0
   lap: number;
   lap_time_s: number;
+
+  // Current JetRacer driving mode.
+  // Examples: DRIVING, RAINING, PIT STOP, CHARGING
+  mode?: string;
 }
 
 export interface BatteryMsg {
   ts: number;
-  voltage: number;     // volts (INA219) 10.5–12.6V
+  voltage: number;     // volts
   percent: number;     // 0–100
-  current_ma: number;  // milliamps draw (INA219)
+  current_ma: number;  // milliamps
   eta_s: number;
 }
 
 export interface FuelMsg {
   ts: number;
-  percent: number;     // 0–100 (logical fuel / energy budget)
+  percent: number;     // 0–100
   eta_s: number;
 }
 
@@ -45,7 +49,6 @@ export interface EventMsg {
   type: 'pit_start' | 'pit_end' | 'lap';
 }
 
-// IMU — MPU9250 9-axis sensor on JetRacer
 export interface ImuMsg {
   ts: number;
   ax: number;   // lateral G  (left/right)
@@ -57,9 +60,8 @@ export interface ImuMsg {
 }
 
 /**
- * Optional localization. Field coordinates in centimetres, matching the
- * extracted track geometry. Nothing is obliged to publish this; when something
- * does, the map's position source flips from 'estimated' to 'measured'.
+ * Optional localization.
+ * Field coordinates in centimetres.
  */
 export interface PoseMsg {
   ts: number;
@@ -68,7 +70,9 @@ export interface PoseMsg {
   heading?: number; // degrees, 0 = +x, clockwise
 }
 
-// ── Health helpers ────────────────────────────────────────────────────────────
+// ------------------------------------------------------------
+// HEALTH HELPERS
+// ------------------------------------------------------------
 
 export type HealthColor = 'green' | 'yellow' | 'red';
 
@@ -85,13 +89,14 @@ export function pctHealth(pct: number): HealthColor {
 }
 
 export const HEALTH_COLOR: Record<HealthColor, string> = {
-  green:  '#22c55e',
+  green: '#22c55e',
   yellow: '#f59e0b',
-  red:    '#ef4444',
+  red: '#ef4444',
 };
 
 export const HEALTH_BG: Record<HealthColor, string> = {
-  green:  '#14532d',
+  green: '#14532d',
   yellow: '#3d1f00',
-  red:    '#450a0a',
+  red: '#450a0a',
 };
+
