@@ -113,6 +113,7 @@ export default function DashboardScreen() {
     recentEvents,
     imu,
     pose,
+    toggleRain,
   } = useTelemetry();
 
 
@@ -161,8 +162,15 @@ export default function DashboardScreen() {
 
 
   /* ==========================================================
-     SHEET CALLBACKS
+     SHEET CALLBACKS & HANDLERS
      ========================================================== */
+
+  const currentMode = state?.mode ?? 'driving';
+  const isRaining = currentMode === 'raining';
+
+  const handleToggleRain = useCallback(() => {
+    toggleRain(!isRaining);
+  }, [toggleRain, isRaining]);
 
   const openTwin = useCallback(
     () => setSheet({ kind: 'twin' }),
@@ -287,11 +295,8 @@ export default function DashboardScreen() {
      MODE
      ========================================================== */
 
-  const currentMode =
-    state?.mode ?? 'driving';
-
   const modeConfig =
-    MODE_CONFIG[currentMode];
+    MODE_CONFIG[currentMode as keyof typeof MODE_CONFIG] ?? MODE_CONFIG.driving;
 
 
   /* ==========================================================
@@ -359,7 +364,7 @@ export default function DashboardScreen() {
         'Speed is derived from wheel encoder ticks via the VESC motor controller. ' +
         'The JetRacer uses a Flipsky VESC to send PWM commands for throttle (0–1) and ' +
         'steering (−1 to +1). ' +
-        'The driving mode is received directly from the JetRacer telemetry.',
+        'Tap the Mode block on the dashboard to trigger or stop rain mode via MQTT.',
 
       source:
         'VESC speed controller + wheel odometry',
@@ -577,7 +582,6 @@ export default function DashboardScreen() {
 
     };
   }
-
 
   /* ==========================================================
      TIRE INFO
@@ -1080,12 +1084,11 @@ export default function DashboardScreen() {
 
             </Pressable>
 
-
-            {/* =================================================
-                MODE
+{/* =================================================
+                MODE (INTERACTIVE RAIN TOGGLE)
                 ================================================= */}
 
-            <View
+            <Pressable
               style={[
                 styles.miniTile,
                 {
@@ -1094,6 +1097,7 @@ export default function DashboardScreen() {
                     modeConfig.color,
                 },
               ]}
+              onPress={handleToggleRain}
             >
 
               <Text style={styles.miniLabel}>
@@ -1114,7 +1118,7 @@ export default function DashboardScreen() {
 
               </Text>
 
-            </View>
+            </Pressable>
 
 
             {/* TIRES */}
