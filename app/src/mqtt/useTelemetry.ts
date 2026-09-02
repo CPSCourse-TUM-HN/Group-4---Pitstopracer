@@ -143,5 +143,14 @@ export function useTelemetry(): TelemetryState {
     return () => clearInterval(id);
   }, []);
 
-  return { status, stale, dropped, state, battery, fuel, tires, strategy, recentEvents, imu, pose };
+const toggleRain = useCallback((isRaining: boolean) => {
+    if (clientRef.current) {
+      const topic = `${config.topicPrefix}/control/mode`;
+      const payload = JSON.stringify({ mode: isRaining ? 'raining' : 'driving' });
+      clientRef.current.publish(topic, payload);
+    }
+  }, []);
+  
+  return { status, stale, dropped, state, battery, fuel, tires, strategy, recentEvents, imu, pose, toggleRain };
 }
+
