@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { config } from '../config';
-import { connect, Status } from './client';
+import { connect, Status, Client } from './client'; // Ensure Client type is imported if needed
 import { STALE_MS, TOPIC_SUFFIXES, TopicSuffix } from './topics';
 import { isValidPayload } from './validation';
 import {
@@ -8,21 +8,14 @@ import {
   PoseMsg, StateMsg, StrategyMsg, TiresMsg,
 } from '../types';
 
-
 // Re-exported so existing importers keep working; defined in ./topics.
 export { STALE_MS };
 
-/**
- * How often staleness is re-evaluated. Staleness is the passage of time rather
- * than an event, so it needs its own clock -- see the ticker effect below.
- */
 const STALE_TICK_MS = 1_000;
 
 export interface TelemetryState {
   status: Status;
-  /** Per-topic staleness, recomputed on a timer rather than on arrival. */
   stale: Record<TopicSuffix, boolean>;
-  /** Payloads dropped for failing their shape check, by topic. */
   dropped: Record<string, number>;
   state: StateMsg | null;
   battery: BatteryMsg | null;
@@ -31,8 +24,8 @@ export interface TelemetryState {
   strategy: StrategyMsg | null;
   recentEvents: EventMsg[];
   imu: ImuMsg | null;
-  /** Measured localization, when any producer publishes it. */
   pose: PoseMsg | null;
+  toggleRain: (isRaining: boolean) => void;
 }
 
 const NONE_STALE = Object.freeze(
@@ -52,9 +45,8 @@ export function useTelemetry(): TelemetryState {
   const [stale,        setStale]        = useState<Record<TopicSuffix, boolean>>(NONE_STALE);
   const [dropped,      setDropped]      = useState<Record<string, number>>({});
 
-  // Arrival times live in a ref, not state. Writing them to state allocated a
-  // new object per message -- roughly 36 a second across state and imu -- and
-  // re-rendered the entire dashboard each time purely to record a timestamp.
+  // 1. Declare clientRef
+  const clientRef = useRef<Client | null>(null);
   const lastUpdateRef = useRef<Partial<Record<TopicSuffix, number>>>({});
   const droppedRef = useRef<Record<string, number>>({});
 
@@ -87,9 +79,6 @@ export function useTelemetry(): TelemetryState {
           case 'pose':     setPose(payload as PoseMsg); break;
           case 'event': {
             const evt = payload as EventMsg;
-            // Pit events must survive a burst of lap events, so the buffer is
-            // kept per kind rather than as one shared five-slot window: five
-            // laps in a row used to evict an open pit_start and strand the car.
             setRecentEvents(prev => {
               const next = [evt, ...prev];
               const pits = next.filter(e => e.type !== 'lap').slice(0, 4);
@@ -102,15 +91,17 @@ export function useTelemetry(): TelemetryState {
       },
     );
 
+    // 2. Assign client instance to ref
+    clientRef.current = client;
+
     TOPIC_SUFFIXES.forEach(s => client.subscribe(`${p}/${s}`));
-    return () => client.disconnect();
+
+    return () => {
+      client.disconnect();
+      clientRef.current = null; // Clean up ref on unmount
+    };
   }, []);
 
-  // Staleness is the *absence* of messages, so it cannot be derived during a
-  // render that is itself driven by messages: when the publisher dies nothing
-  // re-renders and the dashboard freezes on values that still look live. This
-  // timer is what makes the spec's "stale data freezes, it does not hide"
-  // reachable at all.
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
@@ -128,7 +119,6 @@ export function useTelemetry(): TelemetryState {
         return prev;
       });
 
-      // Surface drop counts without re-rendering on every dropped message.
       setDropped(prev => {
         const cur = droppedRef.current;
         const keys = Object.keys(cur);
@@ -143,14 +133,13 @@ export function useTelemetry(): TelemetryState {
     return () => clearInterval(id);
   }, []);
 
-const toggleRain = useCallback((isRaining: boolean) => {
+  const toggleRain = useCallback((isRaining: boolean) => {
     if (clientRef.current) {
       const topic = `${config.topicPrefix}/control/mode`;
       const payload = JSON.stringify({ mode: isRaining ? 'raining' : 'driving' });
       clientRef.current.publish(topic, payload);
     }
   }, []);
-  
+
   return { status, stale, dropped, state, battery, fuel, tires, strategy, recentEvents, imu, pose, toggleRain };
 }
-
