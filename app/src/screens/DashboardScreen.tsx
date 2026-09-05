@@ -1,4 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import ArcGauge from '../components/ArcGauge';
@@ -13,8 +18,12 @@ import InfoModal, { InfoContent } from '../components/InfoModal';
 import TrackMap from '../components/TrackMap';
 
 import { useTelemetry, STALE_MS } from '../mqtt/useTelemetry';
+
+import { RAIN_COMMAND_TOPIC } from '../mqtt/topics';
+
 import { useCarPosition } from '../track/useCarPosition';
 import { TRACK_LENGTH_CM } from '../track/monza.generated';
+
 import { config } from '../config';
 
 import {
@@ -25,19 +34,17 @@ import {
 
 import {
   FUEL_BURN_PER_LAP_PCT,
-  FUEL_PIT_THRESHOLD_PCT,
   SPEED_GAUGE_MAX_KMH,
   TIRE_PIT_THRESHOLD,
   TOTAL_LAPS,
 } from '../raceConfig';
 
 
+// ============================================================
+// TYPES
+// ============================================================
+
 type TirePos = 'FL' | 'FR' | 'RL' | 'RR';
-
-
-/* ============================================================
-   INFO SHEETS
-   ============================================================ */
 
 type Sheet =
   | {
@@ -55,9 +62,9 @@ type Sheet =
     };
 
 
-/* ============================================================
-   CONNECTION COLORS
-   ============================================================ */
+// ============================================================
+// CONNECTION COLORS
+// ============================================================
 
 const STATUS_COLOR = {
   connected: '#22c55e',
@@ -68,9 +75,9 @@ const STATUS_COLOR = {
 } as const;
 
 
-/* ============================================================
-   MODE CONFIGURATION
-   ============================================================ */
+// ============================================================
+// MODE CONFIGURATION
+// ============================================================
 
 const MODE_CONFIG = {
   driving: {
@@ -95,11 +102,15 @@ const MODE_CONFIG = {
 } as const;
 
 
-/* ============================================================
-   DASHBOARD
-   ============================================================ */
+// ============================================================
+// DASHBOARD
+// ============================================================
 
 export default function DashboardScreen() {
+
+  // ==========================================================
+  // TELEMETRY
+  // ==========================================================
 
   const {
     status,
@@ -113,116 +124,278 @@ export default function DashboardScreen() {
     recentEvents,
     imu,
     pose,
+    publishCommand,
   } = useTelemetry();
 
 
-  /* ==========================================================
-     CAR POSITION
-     ========================================================== */
+  // ==========================================================
+  // CURRENT MODE
+  //
+  // IMPORTANT:
+  // The JetRacer telemetry is the source of truth.
+  //
+  // The Rain button does NOT directly change the MODE display.
+  // ==========================================================
 
-  const car = useCarPosition(
-    state,
-    recentEvents,
-    pose,
-    stale.pose
-  );
+  const currentMode =
+    state?.mode ?? 'driving';
 
-
-  /* ==========================================================
-     STALE STATES
-     ========================================================== */
-
-  const staleState = stale.state;
-  const staleBattery = stale.battery;
-  const staleFuel = stale.fuel;
-  const staleTires = stale.tires;
-  const staleImu = stale.imu;
+  const modeConfig =
+    MODE_CONFIG[currentMode];
 
 
-  /* ==========================================================
-     CONNECTION INFORMATION
-     ========================================================== */
+  // ==========================================================
+  // RAIN BUTTON STATE
+  //
+  // This represents the requested Rain state.
+  // The actual MODE still comes from JetRacer telemetry.
+  // ==========================================================
 
-  const droppedTotal = Object.values(dropped).reduce(
-    (a, b) => a + b,
-    0
-  );
-
-  const staleSuffixes = Object.entries(stale)
-    .filter(([, s]) => s)
-    .map(([k]) => k);
-
-
-  /* ==========================================================
-     INFO SHEET STATE
-     ========================================================== */
-
-  const [sheet, setSheet] = useState<Sheet | null>(null);
+  const [
+    rainOn,
+    setRainOn,
+  ] = useState(false);
 
 
-  /* ==========================================================
-     SHEET CALLBACKS
-     ========================================================== */
+  // ==========================================================
+  // SYNCHRONIZE RAIN BUTTON WITH JETRACER
+  //
+  // If JetRacer reports raining -> button ON.
+  // Otherwise -> button OFF.
+  // ==========================================================
 
-  const openTwin = useCallback(
-    () => setSheet({ kind: 'twin' }),
-    []
-  );
+  useEffect(() => {
 
-  const openSpeed = useCallback(
-    () => setSheet({ kind: 'speed' }),
-    []
-  );
+    setRainOn(
+      currentMode === 'raining'
+    );
 
-  const openBattery = useCallback(
-    () => setSheet({ kind: 'battery' }),
-    []
-  );
-
-  const openFuel = useCallback(
-    () => setSheet({ kind: 'fuel' }),
-    []
-  );
-
-  const openImu = useCallback(
-    () => setSheet({ kind: 'imu' }),
-    []
-  );
-
-  const openConnection = useCallback(
-    () => setSheet({ kind: 'connection' }),
-    []
-  );
-
-  const openTire = useCallback(
-    (pos: string) =>
-      setSheet({
-        kind: 'tire',
-        pos: pos.toUpperCase() as TirePos,
-      }),
-    []
-  );
-
-  const closeSheet = useCallback(
-    () => setSheet(null),
-    []
-  );
+  }, [
+    currentMode,
+  ]);
 
 
-  /* ==========================================================
-     LAP
-     ========================================================== */
+  // ==========================================================
+  // RAIN BUTTON
+  // ==========================================================
 
-  const lap = state?.lap ?? 1;
+  const toggleRain = useCallback(() => {
+
+    const nextRainState =
+      !rainOn;
+
+
+    // Update button immediately.
+
+    setRainOn(
+      nextRainState
+    );
+
+
+    // --------------------------------------------------------
+    // Send command to JetRacer
+    //
+    // Topic:
+    // race/car1/command
+    //
+    // Payload:
+    // {
+    //   command: "rain",
+    //   enabled: true/false
+    // }
+    // --------------------------------------------------------
+
+    const topic =
+      `${config.topicPrefix}/${RAIN_COMMAND_TOPIC}`;
+
+
+    publishCommand(
+      topic,
+      {
+        command: 'rain',
+        enabled: nextRainState,
+      },
+    );
+
+
+    console.log(
+      '[rain] command sent:',
+      nextRainState
+        ? 'ON'
+        : 'OFF'
+    );
+
+  }, [
+    rainOn,
+    publishCommand,
+  ]);
+
+
+  // ==========================================================
+  // CAR POSITION
+  //
+  // IMPORTANT:
+  // useCarPosition expects:
+  //
+  //   state
+  //   recentEvents
+  //   pose
+  //   poseStale
+  //
+  // This fixes the previous events.find error.
+  // ==========================================================
+
+  const carPosition =
+    useCarPosition(
+      state,
+      recentEvents,
+      pose,
+      stale.pose,
+    );
+
+
+  // ==========================================================
+  // STALE STATES
+  // ==========================================================
+
+  const staleState =
+    stale.state;
+
+  const staleBattery =
+    stale.battery;
+
+  const staleFuel =
+    stale.fuel;
+
+  const staleTires =
+    stale.tires;
+
+  const staleImu =
+    stale.imu;
+
+
+  // ==========================================================
+  // CONNECTION INFORMATION
+  // ==========================================================
+
+  const droppedTotal =
+    Object.values(dropped).reduce(
+      (a, b) => a + b,
+      0,
+    );
+
+  const staleSuffixes =
+    Object.entries(stale)
+      .filter(([, s]) => s)
+      .map(([k]) => k);
+
+
+  // ==========================================================
+  // INFO SHEET STATE
+  // ==========================================================
+
+  const [
+    sheet,
+    setSheet,
+  ] = useState<Sheet | null>(null);
+
+
+  // ==========================================================
+  // SHEET CALLBACKS
+  // ==========================================================
+
+  const openTwin =
+    useCallback(
+      () =>
+        setSheet({
+          kind: 'twin',
+        }),
+      [],
+    );
+
+  const openSpeed =
+    useCallback(
+      () =>
+        setSheet({
+          kind: 'speed',
+        }),
+      [],
+    );
+
+  const openBattery =
+    useCallback(
+      () =>
+        setSheet({
+          kind: 'battery',
+        }),
+      [],
+    );
+
+  const openFuel =
+    useCallback(
+      () =>
+        setSheet({
+          kind: 'fuel',
+        }),
+      [],
+    );
+
+  const openImu =
+    useCallback(
+      () =>
+        setSheet({
+          kind: 'imu',
+        }),
+      [],
+    );
+
+  const openConnection =
+    useCallback(
+      () =>
+        setSheet({
+          kind: 'connection',
+        }),
+      [],
+    );
+
+  const openTire =
+    useCallback(
+      (pos: string) =>
+        setSheet({
+          kind: 'tire',
+          pos:
+            pos.toUpperCase() as TirePos,
+        }),
+      [],
+    );
+
+  const closeSheet =
+    useCallback(
+      () =>
+        setSheet(null),
+      [],
+    );
+
+
+  // ==========================================================
+  // LAP
+  // ==========================================================
+
+  const lap =
+    state?.lap ?? 1;
 
   const lapTimeSec =
     state?.lap_time_s ?? 0;
 
   const lapMins =
-    Math.floor(lapTimeSec / 60);
+    Math.floor(
+      lapTimeSec / 60
+    );
 
   const lapSecs =
-    (lapTimeSec % 60)
+    (
+      lapTimeSec % 60
+    )
       .toFixed(1)
       .padStart(4, '0');
 
@@ -230,9 +403,9 @@ export default function DashboardScreen() {
     `${lapMins}:${lapSecs}`;
 
 
-  /* ==========================================================
-     SPEED / THROTTLE
-     ========================================================== */
+  // ==========================================================
+  // SPEED / THROTTLE
+  // ==========================================================
 
   const speedKmh =
     state
@@ -241,13 +414,15 @@ export default function DashboardScreen() {
 
   const throttlePct =
     state
-      ? Math.round(state.throttle * 100)
+      ? Math.round(
+          state.throttle * 100
+        )
       : 0;
 
 
-  /* ==========================================================
-     BATTERY
-     ========================================================== */
+  // ==========================================================
+  // BATTERY
+  // ==========================================================
 
   const batPct =
     battery
@@ -257,22 +432,24 @@ export default function DashboardScreen() {
   const batColor =
     battery
       ? HEALTH_COLOR[
-          pctHealth(battery.percent)
+          pctHealth(
+            battery.percent
+          )
         ]
       : '#4b5563';
 
 
-  /* ==========================================================
-     SPEED COLOR
-     ========================================================== */
+  // ==========================================================
+  // SPEED COLOR
+  // ==========================================================
 
   const speedColor =
     '#f59e0b';
 
 
-  /* ==========================================================
-     FUEL
-     ========================================================== */
+  // ==========================================================
+  // FUEL
+  // ==========================================================
 
   const etaLaps =
     fuel
@@ -283,26 +460,16 @@ export default function DashboardScreen() {
       : undefined;
 
 
-  /* ==========================================================
-     MODE
-     ========================================================== */
-
-  const currentMode =
-    state?.mode ?? 'driving';
-
-  const modeConfig =
-    MODE_CONFIG[currentMode];
-
-
-  /* ==========================================================
-     INFO MODAL BUILDERS
-     ========================================================== */
+  // ==========================================================
+  // INFO MODAL BUILDERS
+  // ==========================================================
 
   function buildSpeed(): InfoContent {
 
     return {
 
-      title: 'Speed & Throttle',
+      title:
+        'Speed & Throttle',
 
       value:
         `${speedKmh.toFixed(1)} km/h`,
@@ -313,14 +480,16 @@ export default function DashboardScreen() {
           label: 'Speed',
           value:
             `${speedKmh.toFixed(1)} km/h`,
-          note: 'Wheel odometry',
+          note:
+            'Wheel odometry',
         },
 
         {
           label: 'Throttle',
           value:
             `${throttlePct}%`,
-          note: 'VESC command',
+          note:
+            'VESC command',
         },
 
         {
@@ -368,15 +537,16 @@ export default function DashboardScreen() {
   }
 
 
-  /* ==========================================================
-     BATTERY INFO
-     ========================================================== */
+  // ==========================================================
+  // BATTERY INFO
+  // ==========================================================
 
   function buildBattery(): InfoContent {
 
     return {
 
-      title: 'Battery',
+      title:
+        'Battery',
 
       value:
         battery
@@ -391,7 +561,8 @@ export default function DashboardScreen() {
             battery
               ? `${battery.voltage.toFixed(2)} V`
               : '—',
-          note: 'INA219 ADC (12-bit)',
+          note:
+            'INA219 ADC (12-bit)',
         },
 
         {
@@ -436,9 +607,9 @@ export default function DashboardScreen() {
   }
 
 
-  /* ==========================================================
-     FUEL INFO
-     ========================================================== */
+  // ==========================================================
+  // FUEL INFO
+  // ==========================================================
 
   function buildFuel(): InfoContent {
 
@@ -500,9 +671,9 @@ export default function DashboardScreen() {
   }
 
 
-  /* ==========================================================
-     IMU INFO
-     ========================================================== */
+  // ==========================================================
+  // IMU INFO
+  // ==========================================================
 
   function buildImu(): InfoContent {
 
@@ -579,9 +750,9 @@ export default function DashboardScreen() {
   }
 
 
-  /* ==========================================================
-     TIRE INFO
-     ========================================================== */
+  // ==========================================================
+  // TIRE INFO
+  // ==========================================================
 
   function buildTire(
     pos: TirePos
@@ -602,7 +773,9 @@ export default function DashboardScreen() {
       tireHealth(value);
 
     const pct =
-      Math.round(value * 100);
+      Math.round(
+        value * 100
+      );
 
     return {
 
@@ -662,9 +835,9 @@ export default function DashboardScreen() {
   }
 
 
-  /* ==========================================================
-     DIGITAL TWIN
-     ========================================================== */
+  // ==========================================================
+  // DIGITAL TWIN
+  // ==========================================================
 
   function buildTwin(): InfoContent {
 
@@ -674,9 +847,9 @@ export default function DashboardScreen() {
         'Digital Twin — Track Position',
 
       value:
-        car.pose.source === 'pose'
+        carPosition.pose.source === 'pose'
           ? 'Measured'
-          : car.pose.source === 'progress'
+          : carPosition.pose.source === 'progress'
             ? 'Estimated'
             : 'Unknown',
 
@@ -685,15 +858,15 @@ export default function DashboardScreen() {
         {
           label: 'Position source',
           value:
-            car.pose.source,
+            carPosition.pose.source,
         },
 
         {
           label: 'Lap progress',
           value:
-            car.progress !== null
+            carPosition.progress !== null
               ? `${(
-                  car.progress * 100
+                  carPosition.progress * 100
                 ).toFixed(1)}%`
               : '—',
         },
@@ -701,15 +874,15 @@ export default function DashboardScreen() {
         {
           label: 'Field position',
           value:
-            car.pose.source !== 'none'
-              ? `x ${car.pose.x.toFixed(0)} cm · y ${car.pose.y.toFixed(0)} cm`
+            carPosition.pose.source !== 'none'
+              ? `x ${carPosition.pose.x.toFixed(0)} cm · y ${carPosition.pose.y.toFixed(0)} cm`
               : '—',
         },
 
         {
           label: 'Expected lap',
           value:
-            `${car.expectedLapTimeS.toFixed(1)}s`,
+            `${carPosition.expectedLapTimeS.toFixed(1)}s`,
         },
 
         {
@@ -723,7 +896,7 @@ export default function DashboardScreen() {
         {
           label: 'In pit',
           value:
-            car.inPit
+            carPosition.inPit
               ? 'Yes'
               : 'No',
         },
@@ -740,9 +913,9 @@ export default function DashboardScreen() {
   }
 
 
-  /* ==========================================================
-     CONNECTION INFO
-     ========================================================== */
+  // ==========================================================
+  // CONNECTION INFO
+  // ==========================================================
 
   function buildConnection(): InfoContent {
 
@@ -818,9 +991,9 @@ export default function DashboardScreen() {
   }
 
 
-  /* ==========================================================
-     SHEET BUILDER
-     ========================================================== */
+  // ==========================================================
+  // SHEET BUILDER
+  // ==========================================================
 
   function buildSheet(
     k: Sheet
@@ -859,14 +1032,13 @@ export default function DashboardScreen() {
       : buildSheet(sheet);
 
 
-  /* ==========================================================
-     RENDER
-     ========================================================== */
+  // ==========================================================
+  // RENDER
+  // ==========================================================
 
   return (
 
     <View style={styles.screen}>
-
 
       {/* ======================================================
           HEADER
@@ -971,9 +1143,9 @@ export default function DashboardScreen() {
         <View style={styles.mapRow}>
 
           <TrackMap
-            pose={car.pose}
-            inPit={car.inPit}
-            stale={staleState}
+            pose={carPosition.pose}
+            inPit={carPosition.inPit}
+            stale={stale.pose}
             height={300}
             onPress={openTwin}
           />
@@ -1115,6 +1287,40 @@ export default function DashboardScreen() {
               </Text>
 
             </View>
+
+
+            {/* =================================================
+                RAIN
+                ================================================= */}
+
+            <Pressable
+              style={[
+                styles.rainButton,
+                rainOn &&
+                  styles.rainButtonOn,
+              ]}
+              onPress={toggleRain}
+            >
+
+              <Text style={styles.rainLabel}>
+                RAIN
+              </Text>
+
+              <Text
+                style={[
+                  styles.rainValue,
+                  rainOn &&
+                    styles.rainValueOn,
+                ]}
+              >
+
+                {rainOn
+                  ? 'ON'
+                  : 'OFF'}
+
+              </Text>
+
+            </Pressable>
 
 
             {/* TIRES */}
@@ -1416,9 +1622,9 @@ export default function DashboardScreen() {
 }
 
 
-/* ============================================================
-   STYLES
-   ============================================================ */
+// ============================================================
+// STYLES
+// ============================================================
 
 const styles = StyleSheet.create({
 
@@ -1426,6 +1632,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0E1116',
   },
+
 
   header: {
     flexDirection: 'row',
@@ -1438,6 +1645,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#1e2128',
   },
 
+
   lapLabel: {
     fontSize: 10,
     color: '#4b5563',
@@ -1445,17 +1653,20 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
+
   lapValue: {
     fontSize: 20,
     fontWeight: '700',
     color: '#f9fafb',
   },
 
+
   lapTotal: {
     fontSize: 14,
     color: '#6b7280',
     fontWeight: '400',
   },
+
 
   lapTime: {
     fontSize: 28,
@@ -1464,9 +1675,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
+
   staleText: {
     color: '#4b5563',
   },
+
 
   liveBadge: {
     flexDirection: 'row',
@@ -1474,11 +1687,13 @@ const styles = StyleSheet.create({
     gap: 5,
   },
 
+
   liveDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
   },
+
 
   liveLabel: {
     fontSize: 12,
@@ -1486,19 +1701,23 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
+
   settingsIcon: {
     fontSize: 13,
     color: '#4b5563',
     marginLeft: 4,
   },
 
+
   scroll: {
     flex: 1,
   },
 
+
   content: {
     paddingTop: 8,
   },
+
 
   mapRow: {
     flexDirection: 'row',
@@ -1508,10 +1727,12 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
 
+
   mapSide: {
     flex: 1,
     gap: 6,
   },
+
 
   miniTile: {
     backgroundColor: '#161b22',
@@ -1520,11 +1741,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
   },
 
+
   miniLabel: {
     fontSize: 8,
     color: '#6b7280',
     letterSpacing: 1.2,
   },
+
 
   miniValue: {
     fontSize: 18,
@@ -1532,11 +1755,52 @@ const styles = StyleSheet.create({
     color: '#f9fafb',
   },
 
+
   miniUnit: {
     fontSize: 9,
     color: '#6b7280',
     fontWeight: '400',
   },
+
+
+  // ==========================================================
+  // RAIN BUTTON
+  // ==========================================================
+
+  rainButton: {
+    backgroundColor: '#161b22',
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 9,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4b5563',
+  },
+
+
+  rainButtonOn: {
+    borderLeftColor: '#38bdf8',
+    backgroundColor: '#12212b',
+  },
+
+
+  rainLabel: {
+    fontSize: 8,
+    color: '#6b7280',
+    letterSpacing: 1.2,
+  },
+
+
+  rainValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#9ca3af',
+  },
+
+
+  rainValueOn: {
+    color: '#38bdf8',
+  },
+
 
   chipGrid: {
     flexDirection: 'row',
@@ -1544,6 +1808,7 @@ const styles = StyleSheet.create({
     gap: 5,
     marginTop: 2,
   },
+
 
   chip: {
     borderWidth: 1,
@@ -1553,10 +1818,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+
   chipText: {
     fontSize: 9,
     fontWeight: '700',
   },
+
 
   lapHistoryRow: {
     flexDirection: 'row',
@@ -1566,10 +1833,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 
+
   lapHistoryLabel: {
     fontSize: 10,
     color: '#4b5563',
   },
+
 
   gaugesRow: {
     flexDirection: 'row',
@@ -1578,15 +1847,18 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
 
+
   card: {
     borderTopWidth: 1,
     borderTopColor: '#1e2128',
   },
 
+
   rowCard: {
     flexDirection: 'row',
     alignItems: 'stretch',
   },
+
 
   cardHeader: {
     flexDirection: 'row',
@@ -1596,12 +1868,14 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
 
+
   cardLabel: {
     fontSize: 11,
     color: '#6b7280',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
+
 
   staleTag: {
     fontSize: 10,
@@ -1610,9 +1884,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
+
   dividerV: {
     width: 1,
     backgroundColor: '#1e2128',
     marginVertical: 8,
   },
+
 });

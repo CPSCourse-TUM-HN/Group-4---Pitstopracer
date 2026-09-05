@@ -9,6 +9,8 @@ export const TOPIC_SUFFIXES = [
   'state', 'battery', 'fuel', 'tires', 'strategy', 'event', 'imu', 'pose',
 ] as const;
 
+export const RAIN_COMMAND_TOPIC = 'command/rain';
+
 export type TopicSuffix = (typeof TOPIC_SUFFIXES)[number];
 
 /**
