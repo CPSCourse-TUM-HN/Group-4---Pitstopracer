@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "babel-preset-expo": "~57.0.0",
-    "expo": "~57.0.19",
+    "expo": "~57.0.20",
     "expo-asset": "~57.0.16",
     "expo-status-bar": "~57.0.1",
     "mqtt": "^5.10.1",
